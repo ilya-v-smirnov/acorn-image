@@ -5,9 +5,9 @@ from PIL import Image
 from . import widgets as w
 from .models import FileManagerModel, ImageCorrectionModel
 import os
-from .file_manager import ImageFileMixin 
-from matplotlib.pyplot import switch_backend
-from .accessory_functions import save_csv, read_csv, limit_text
+from .file_manager import ImageFileMixin
+from .accessory_functions import save_csv, limit_text
+
 
 class FramePanel(tk.LabelFrame):
     """
@@ -78,18 +78,17 @@ class FileManager(ImageFileMixin, FramePanel):
     
     def __init__(self, parent,
                  path=None, img_ext=None):
+        self.path = path
         FramePanel.__init__(self, parent,
                             text='File Manager',
                             frame_model=FileManagerModel)
         ImageFileMixin.__init__(self, path=path,
                                 img_ext=img_ext)
-                                
         self.path_wd = self.path if os.path.exists(self.path) else None                        
         self.frame_model.add_value(widget='recursive',
                              key='command',
                              value=self._recursive)
         self.initiate_widgets()
-        
         sticky_pad = {'sticky': tk.W+tk.E, 'padx': 5, 'pady': 1}
         ttk.Label(self,
                   text='Path to images:'
@@ -120,6 +119,7 @@ class FileManager(ImageFileMixin, FramePanel):
                  text='Path to working directory:'
                  ).grid(row=3, column=0,
                  **sticky_pad)
+        self.recursive = False
         self.widgets['recursive'].grid(row=3, column=1,
                                 **sticky_pad)
         self.widgets['save_images'].grid(row=5, column=0,
@@ -220,7 +220,8 @@ class ImageRow(tk.Frame):
     Creates three image-buttons showing image processing results.
     """
     
-    def __init__(self, parent, images, titles, subtitles, res, *args, **kwargs):
+    def __init__(self, parent, images,
+                 titles, subtitles, res, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.buttons = []
         self.subtitles = subtitles
@@ -228,8 +229,7 @@ class ImageRow(tk.Frame):
         sticky_pad = {'sticky': tk.E, 'padx': 5, 'pady': 5}
         for i, (img, title, subtitl) in enumerate(zip(images, titles, self.subtitles)):
             ttk.Label(self, text=title,
-                     font=("TkDefaultFont", 12)
-                     ).grid(row=0, column=i)
+                     font=("TkDefaultFont", 12)).grid(row=0, column=i)
             self.buttons.append(w.ImageButton(self, img, res))
             self.buttons[i].grid(row=1, column=i, **sticky_pad)
             self.sub_labels.append(ttk.Label(self,
@@ -269,7 +269,7 @@ class TableView(tk.Toplevel):
         self._make_rows()
         self._fill_table()
         scroll = tk.Scrollbar(self, orient=tk.VERTICAL,
-                               command=self.tree.yview)
+                              command=self.tree.yview)
         scroll.pack(side=tk.RIGHT, fill=tk.Y)
         self.tree.configure(yscrollcommand=scroll.set)
     
@@ -371,4 +371,3 @@ class ButtonPanel:
             fieldnames = report[0].keys()
         if csv_name != '':
             save_csv(report, fieldnames, csv_name)
-        

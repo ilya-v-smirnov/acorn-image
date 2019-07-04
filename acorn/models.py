@@ -5,6 +5,7 @@
 
 import os
 
+
 class Model:
     
     def __init__(self):
@@ -70,6 +71,7 @@ class ImageCorrectionModel(Model):
         self.model['inverse'] = {'type': 'checkbutton',
                                  'text_label': 'Inverse Image',
                                  'default': False}
+ 
                                           
 class WoundParametersModel(Model):
 
@@ -79,10 +81,10 @@ class WoundParametersModel(Model):
                               'text_label': 'Mode',
                               'default': 'Borders',
                               'values': ['Borders', 'Contrast', 'Minimum']}
-        self.model['filter'] = {'type': 'combobox',
-                                'text_label': 'Mode',
-                                'default': 'Mean',
-                                'values': ['Mean', 'Otsu']}
+        self.model['filt'] = {'type': 'combobox',
+                              'text_label': 'Mode',
+                              'default': 'Mean',
+                              'values': ['Mean', 'Otsu']}
         self.model['offset'] = {'type': 'spinbox',
                                 'text_label': 'Offset, %',
                                 'default': 0,
@@ -111,6 +113,7 @@ class WoundParametersModel(Model):
                                      'to': 80,
                                      'increment': 1}
 
+
 class AppModel(Model):
     
     def __init__(self):
@@ -121,4 +124,3 @@ class AppModel(Model):
         else:
             self.model['default_folder'] = os.getcwd()
         self.model['img_ext'] = ['.jpg', '.jpeg']
-                                        

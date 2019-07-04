@@ -11,8 +11,9 @@ from scipy import ndimage as ndi
 from skimage.filters import sobel
 from skimage.feature import corner_peaks
 from skimage.exposure import equalize_adapthist
-from matplotlib.colors import LinearSegmentedColormap
 from .accessory_functions import *
+from math import floor
+
 
 class CorrectedImage:
     """
@@ -22,6 +23,14 @@ class CorrectedImage:
     
     def __init__(self, img_path):
         self.img_path = img_path
+        self.PILimg = None
+        self.channel = None
+        self.bright = None
+        self.contr = None
+        self.blur_radius = None
+        self.equal_exposure = None
+        self.inverse = None
+        self.img_corrected = None
         try:
             self.PILimg = Image.open(self.img_path)
             self.img_original = np.asarray(self.PILimg)
@@ -90,10 +99,10 @@ class CorrectedImage:
         if len(self.img_original.shape) == 3:
             ax1.imshow(self.img_original)
         else:
-            ax1.imshow(self.img_original, cmap=plt.cm.gray)
+            ax1.imshow(self.img_original, cmap='gray')
         ax1.set_title('Original image')
         ax1.axis('off')
-        ax2.imshow(self.img_corrected, cmap=plt.cm.gray)
+        ax2.imshow(self.img_corrected, cmap='gray')
         ax2.set_title('Corrected image')
         ax2.axis('off')
         plt.show()
@@ -102,13 +111,13 @@ class CorrectedImage:
         """
         Return arguments of the __call__ function.
         """
-        dict = {'channel': self.channel,
-                'bright': self.bright,
-                'contr': self.contr,
-                'blur_radius': self.blur_radius,
-                'equal_exposure': self.equal_exposure,
-                'inverse': self.inverse}
-        return dict
+        d = {'channel': self.channel,
+             'bright': self.bright,
+             'contr': self.contr,
+             'blur_radius': self.blur_radius,
+             'equal_exposure': self.equal_exposure,
+             'inverse': self.inverse}
+        return d
     
     def get_image_path(self):
         return self.img_path
@@ -125,13 +134,17 @@ class BinaryImage(CorrectedImage):
     
     def __init__(self, img_path):
         super().__init__(img_path)
+        self.pre_binary = None
+        self.img_binary = None
+        self.y_slice = None
+        self.thresh = None
         
-    def __call__(self, filter,
+    def __call__(self, filt,
                  mode='Borders',
                  offset=0, y_slice=None,
                  **kwargs):
         super().__call__(**kwargs)
-        self.filter = filter
+        self.filt = filt
         self.mode = mode
         self.offset = offset
         if y_slice is None:
@@ -152,10 +165,10 @@ class BinaryImage(CorrectedImage):
         return self.img_binary
     
     def _get_filter(self):
-        dict = {'Mean': threshold_mean,
-                'Otsu': threshold_otsu,
-                'Minimum': threshold_minimum}
-        return dict.get(self.filter)
+        d = {'Mean': threshold_mean,
+             'Otsu': threshold_otsu,
+             'Minimum': threshold_minimum}
+        return d.get(self.filt)
     
     def show_binary(self):
         fig = plt.figure()
@@ -186,10 +199,10 @@ class BinaryImage(CorrectedImage):
         return self.pre_binary[self.y_slice,]
         
     def get_image_slice(self):
-        slice = self._slice_img()
-        x = np.arange(len(slice))
+        im_slice = self._slice_img()
+        x = np.arange(len(im_slice))
         fig = plt.figure(figsize=plt.figaspect(self.height/self.width))
-        plt.plot(x, slice, color='red')
+        plt.plot(x, im_slice, color='red')
         plt.axhline(y=self.thresh, linestyle=':', color='blue')
         plt.margins(x=0, y=0)
         plt.axis('off')
@@ -198,15 +211,15 @@ class BinaryImage(CorrectedImage):
         return arr
         
     def show_slice(self):
-        slice = self.get_image_slice(self.y_slice)
-        plt.imshow(slice)
+        im_slice = self.get_image_slice(self.y_slice)
+        plt.imshow(im_slice)
         plt.show()
         
     def called_with(self):
-        dict = {'filter': self.filter,
-                'mode': self.mode,
-                'offset': self.offset}
-        return {**super().called_with(), **dict}
+        d = {'filt': self.filt,
+             'mode': self.mode,
+             'offset': self.offset}
+        return {**super().called_with(), **d}
         
         
 class WoundImage(BinaryImage):
@@ -220,10 +233,14 @@ class WoundImage(BinaryImage):
 
     def __init__(self, img_path):
         super().__init__(img_path)
+        self.pixels = 0
+        self.disk_radius = 1
+        self.min_wound = 1
+        self.min_objects = 1
         
     def __call__(self,   
-                 disk_radius=1,
-                 min_objects=1, min_wound=1,
+                 disk_radius,
+                 min_objects, min_wound,
                  border_size=3, border_color=(255, 0, 0),
                  **kwargs):
         super().__call__(**kwargs)
@@ -278,14 +295,14 @@ class WoundImage(BinaryImage):
     
     def get_images(self):
         sliced_img = self.get_sliced_img(True, 11)
-        slice = self.get_image_slice()
-        return [sliced_img, slice, self.img_wound]
+        im_slice = self.get_image_slice()
+        return [sliced_img, im_slice, self.img_wound]
         
     def called_with(self):
-        dict = {'disk_radius': self.disk_radius,
-                'min_objects': self.min_objects,
-                'min_wound': self.min_wound}
-        return {**super().called_with(), **dict}
+        d = {'disk_radius': self.disk_radius,
+             'min_objects': self.min_objects,
+             'min_wound': self.min_wound}
+        return {**super().called_with(), **d}
         
     def view_images(self):
         fig, axes = plt.subplots(nrows=2, ncols=2,

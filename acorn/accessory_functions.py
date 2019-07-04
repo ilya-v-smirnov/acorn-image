@@ -1,9 +1,10 @@
 
 import numpy as np
 from matplotlib.pyplot import imsave, switch_backend
-from math import ceil, floor
+from math import ceil
 import csv
 import os
+
 
 def fig2array(fig):
     """
@@ -14,6 +15,7 @@ def fig2array(fig):
     arr = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
     arr.shape = (h, w, 3)
     return arr  
+
 
 def get_threshold(img, threshold_fun, offset_perc=0, **kwargs):
     """
@@ -29,6 +31,7 @@ def get_threshold(img, threshold_fun, offset_perc=0, **kwargs):
         return threshold_fun(img, **kwargs) + offset
     return threshold_fun(img) + offset
 
+
 def save_image(img, path, color_map='gray'):
     """
     Saves numpy images using matplotlib interface.
@@ -37,6 +40,7 @@ def save_image(img, path, color_map='gray'):
         imsave(path, img, cmap=color_map)
     else:
         imsave(path, img)
+
 
 def generate_cmap(N):
     """
@@ -47,7 +51,8 @@ def generate_cmap(N):
     colors.extend(new_colors)
     cm = LinearSegmentedColormap.from_list("random_colors", colors, N=N)
     return cm
-    
+  
+  
 def show_images(images):
     """
     Shows arbitary number of numpy images provided as a list.
@@ -69,29 +74,34 @@ def show_images(images):
     for ax in axes:
         ax.axis('off')
     plt.show()
-        
+ 
+ 
 def is_even(N):
     return N % 2 == 0
-    
+  
+  
 def limit_text(text, limit, begin):
     if len(text) >= limit:
         x = len(text) - limit + begin + 3
         text = text[:begin] + '...' + text[x:]
     return text
-    
+ 
+ 
 def dict_identical(d1, d2):
     if len(d1) != len(d2):
         return False
     comp = [d2[key] == value for key, value in d1.items()]
     return all(comp)
-    
+  
+  
 def backend_switcher(fun):
     def switcher(*args, **kwargs):
         switch_backend('TkAgg')
         fun(*args, **kwargs)
         switch_backend('Agg')
     return switcher
-    
+   
+   
 def save_csv(table, fieldnames, filename):
     with open(filename, "w", newline="") as csvfile:
             writer = csv.DictWriter(csvfile, delimiter=";",
@@ -99,7 +109,8 @@ def save_csv(table, fieldnames, filename):
             writer.writeheader()
             for row in table:
                 writer.writerow(row)
-                
+       
+       
 def read_csv(path, sep=';'):
     table = []
     with open(path, newline='') as csvfile:
@@ -107,6 +118,7 @@ def read_csv(path, sep=';'):
         for row in reader:
             table.append(row)
     return table
+
 
 def file_namer(folder, basename='file', suffix=None, num=0, ext=''):
     num_str = str(num)

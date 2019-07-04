@@ -1,9 +1,7 @@
 
 import tkinter as tk
 from tkinter import ttk
-from . import widgets as w
 from . import views as v
-from PIL.Image import open as Image_open
 from .models import WoundParametersModel
 
 class WoundParameters(v.FramePanel):
@@ -15,14 +13,14 @@ class WoundParameters(v.FramePanel):
                  **kwargs):
         super().__init__(parent, frame_model = WoundParametersModel,
                          text='Wound Parameters', **kwargs)
-        self.frame_model.add_value_to_widgets(['mode', 'filter',
+        self.frame_model.add_value_to_widgets(['mode', 'filt',
                                          'offset', 'disk_radius',
                                          'min_wound', 'min_objects'],
                                          'width', 12)
         self.initiate_widgets()
         sticky_pad = {'sticky': tk.W+tk.E, 'padx': 5, 'pady': 2}                        
         self.widgets['mode'].grid(row=0, column=0, **sticky_pad)
-        self.widgets['filter'].grid(row=0, column=1, **sticky_pad)
+        self.widgets['filt'].grid(row=0, column=1, **sticky_pad)
         self.widgets['offset'].grid(row=0, column=2, **sticky_pad)
         self.widgets['equal_exposure'].grid(row=0, column=3,
                                 sticky=tk.W+tk.S, padx=5, pady=2) 
@@ -84,10 +82,10 @@ class WoundAssayView(v.ButtonPanel, tk.Frame):
         self.image_row.configure_subtitles(subtitles)
         
     def get_input(self):
-        input = {}
+        app_input = {}
         for panel in self.input_panels:
-            input = {**input, **panel.get_input()}
-        return input
+            app_input = {**app_input, **panel.get_input()}
+        return app_input
         
     def get_image_path(self):
         return self.file_manager.get_image_path()

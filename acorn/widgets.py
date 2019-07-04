@@ -19,8 +19,8 @@ class ValidatedMixin:
         vcmd = self.register(self._validate)
         invcmd = self.register(self._invalid)
         self.config(validate='all',
-                    validatecommand=(vcmd, '%P', '%s', '%S', '%V', '%i', '%d'),
-                    invalidcommand=(invcmd, '%P', '%s', '%S', '%V', '%i', '%d'))
+                validatecommand=(vcmd, '%P', '%s', '%S', '%V', '%i', '%d'),
+                invalidcommand=(invcmd, '%P', '%s', '%S', '%V', '%i', '%d'))
                     
     def _toggle_error(self, on=False):
         self.config(foreground=('red' if on else 'black'))
@@ -32,14 +32,15 @@ class ValidatedMixin:
         if event == 'focusout':
             valid = self._focusout_validate(event=event)
         elif event == 'key':
-            valid = self._key_validate(proposed=proposed, current=current, char=char,
-                                       event=event, index=index, action=action)
+            valid = self._key_validate(proposed=proposed, current=current,
+                                       char=char, event=event,
+                                       index=index, action=action)
         return valid
         
-    def _focusout_validate(self, **kwargs):
+    def _focusout_validate(self, event):
         return True
         
-    def _key_validate(self, **kwargs):
+    def _key_validate(self):
         return True
         
     def _invalid(self, proposed, current, char, event, index, action):
@@ -47,12 +48,12 @@ class ValidatedMixin:
             self._focusout_invalid(event=event)
         elif event == 'key':
             self._key_invalid(self, proposed=proposed, current=current,
-                              char=char, event=event, index=index, action=action)
+                    char=char, event=event, index=index, action=action)
                                     
-    def _focusout_invalid(self, **kwargs):
+    def _focusout_invalid(self):
         self._toggle_error(True)
         
-    def _key_invalid(self, *args, **kwargs):
+    def _key_invalid(self):
         pass
         
     def trigger_focusout_validation(self):
@@ -67,8 +68,7 @@ class ValidatedSpinbox(ValidatedMixin, ttk.Spinbox):
     Validates Spinbox input.
     """
     
-    def __init__(self, *args, min_var=None, max_var=None, focus_update_var=None,
-                 from_='-Infinity', to='Infinity', **kwargs):
+    def __init__(self, *args, from_='-Infinity', to='Infinity', **kwargs):
         super().__init__(*args, from_=from_, to=to, **kwargs)
         self.resolution = Decimal(str(kwargs.get('increment', '1.0')))
         self.precision = (self.resolution
@@ -131,7 +131,7 @@ class ValidatedCombobox(ValidatedMixin, ttk.Combobox):
         valid = True
         if action == '0' or action == '1':
             valid = False
-        elif not proposed in values:
+        elif proposed not in values:
             valid = False
         return valid
     
@@ -263,8 +263,7 @@ class ImageButton(ttk.Button):
     def configure_image_button(self, img):
         self.img = img
         self.icon = self._make_icon()
-        self.configure(image = self.icon)
+        self.configure(image=self.icon)
         
     def set_default_image(self):
         self.configure_image_button(self._default_image())
-        
