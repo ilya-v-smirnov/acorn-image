@@ -1,6 +1,7 @@
 
 import numpy as np
 from matplotlib.pyplot import imsave, switch_backend
+from matplotlib.colors import LinearSegmentedColormap
 from math import ceil
 import csv
 import os
