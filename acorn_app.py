@@ -1,5 +1,5 @@
 
-from acorn.application_woundassay import AcornImage
+from acorn.main_view import AcornImage
 
-app = AcornImage()
-app.mainloop()
+root = AcornImage()
+root.mainloop()

@@ -3,7 +3,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 from PIL import Image
 from . import widgets as w
-from .models import FileManagerModel, ImageCorrectionModel
+from .models import FileManagerModel, ImageCorrectionDefaultModel
 import os
 from .file_manager import ImageFileMixin
 from .accessory_functions import save_csv, limit_text
@@ -130,7 +130,7 @@ class FileManager(ImageFileMixin, FramePanel):
         but_browse2.grid(row=4, column=2, **sticky_pad)
         
     def _browse_button1(self):
-        chosen_path = filedialog.askdirectory()
+        chosen_path = filedialog.askdirectory(parent=self)
         if chosen_path != '':
             self.path = chosen_path
             self.path_to_images.configure(path=self.path)
@@ -140,7 +140,7 @@ class FileManager(ImageFileMixin, FramePanel):
             self.widgets['file'].configure(values=self.images)
         
     def _browse_button2(self):
-        chosen_path = filedialog.askdirectory()
+        chosen_path = filedialog.askdirectory(parent=self)
         if chosen_path != '':
             self.path_wd = chosen_path
             self.path_to_wd.configure(path=self.path_wd)
@@ -179,9 +179,10 @@ class ImageCorrection(FramePanel):
     Creates a panel for image correction.
     """
     
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, frame_model=ImageCorrectionDefaultModel,
+                 *args, **kwargs):
         super().__init__(parent, text="Image Correction",
-                         frame_model=ImageCorrectionModel,
+                         frame_model=frame_model,
                          *args, **kwargs)
         self.frame_model.add_value_to_widgets(['channel', 'bright',
                                          'contr', 'blur_radius'], 
@@ -240,9 +241,11 @@ class ImageRow(tk.Frame):
         for sub, lab in zip(subtitles, self.sub_labels):
             lab.configure(text=sub)
             
-    def configure_images(self, images):
-        for img, but in zip(images, self.buttons):
-            PILimg = Image.fromarray(img, 'RGB')
+    def configure_images(self, images, img_mode=None):
+        if not img_mode:
+            img_mode = ('RGB',) * 3
+        for img, but, mod in zip(images, self.buttons, img_mode):
+            PILimg = Image.fromarray(img, mod)
             but.configure_image_button(PILimg)
             
     def set_default_images(self):
@@ -255,23 +258,26 @@ class TableView(tk.Toplevel):
     Creates a table widget to show results.
     """
     
-    def __init__(self, parent, table, columns=None,
-                 id_field=None, *args, **kwargs):
+    def __init__(self, parent, table, columns=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.title = 'Report'
         self.table = table
         self.columns = columns or list(self.table[0].keys())
-        self.id_field = id_field
         self.tree = ttk.Treeview(self, columns=self.columns)
-        self.tree.pack(side=tk.LEFT)
         self.tree['show'] = 'headings'
         self._make_columns()
         self._make_rows()
         self._fill_table()
-        scroll = tk.Scrollbar(self, orient=tk.VERTICAL,
-                              command=self.tree.yview)
-        scroll.pack(side=tk.RIGHT, fill=tk.Y)
-        self.tree.configure(yscrollcommand=scroll.set)
+        scroll_y = tk.Scrollbar(self, orient=tk.VERTICAL,
+                                command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scroll_y.set)
+        scroll_x = tk.Scrollbar(self, orient=tk.HORIZONTAL,
+                                command=self.tree.xview)
+        self.tree.configure(xscrollcommand=scroll_x.set)
+        
+        scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     
     def _make_columns(self):
         for col in self.columns:
@@ -281,16 +287,14 @@ class TableView(tk.Toplevel):
     def _make_rows(self):
         index = 0
         for row in self.table:
-            iid = row.get(self.id_field)
-            self.tree.insert(parent='', index=index, iid=iid)
+            self.tree.insert(parent='', index=index, iid=None)
             index += 1
-            
+
     def _fill_table(self):
-        for row in self.table:
+        for row, item in zip(self.table, self.tree.get_children()):
             for col in self.columns:
-                self.tree.set(item=row.get(self.id_field),
-                              column=col, value=row.get(col))
-      
+                self.tree.set(item=item, column=col, value=row.get(col))
+
 
 class ButtonPanel:
     """
@@ -346,28 +350,136 @@ class ButtonPanel:
         pass
         
     def _view_report(self, table):
-        TableView(self, table, id_field='file')
-        
-    def _clear_report(self):
         pass
         
     def _clear_report(self):
         pass
         
-    def _save_report(self, report,
-                     fieldnames=None,
-                     title=None, fileName='report',
-                     dirName=None, fileExt='.csv',
-                     fileTypes=None):
-        if fileTypes is None:
-            fileTypes = [('csv files', '.csv'), ('all files', '.*')]
-        options = {'defaultextension': fileExt,
-                   'filetypes': fileTypes,
-                   'initialdir': dirName,
-                   'initialfile': fileName,
-                   'title': title}
-        csv_name = filedialog.asksaveasfilename(**options)
-        if fieldnames is None:
-            fieldnames = report[0].keys()
-        if csv_name != '':
-            save_csv(report, fieldnames, csv_name)
+    def _clear_report(self):
+        pass
+
+    def _save_report(self):
+        pass
+
+
+class AssayView(ButtonPanel, tk.Frame):
+    """
+    Arranges basic app layout and adds buttons. Defines
+    common functionality of the buttons.
+
+    All child classes should have the following attributes
+    defined in the __init__() function:
+    - self.title, str;
+    - self.additional_panel, None or FramePanel;
+    - self.img_titles, list of three str;
+    - self.img_subtitles, list of three str;
+    - self.img_filename_suffix, str;
+    - self.image_correction_model, Model.
+    If not defined these attribute will have default
+    values.
+    """
+    
+    def __init__(self, parent,
+                 default_folder,
+                 img_ext,
+                 *args, **kwargs):
+        tk.Frame.__init__(self, parent, *args, **kwargs)
+        ButtonPanel.__init__(self, self)
+        self.default_folder = default_folder
+        self.img_ext = img_ext
+        attributes = ['title', 'additional_panel',
+                      'img_titles', 'img_subtitles',
+                      'img_filename_suffix',
+                      'image_correction_model']
+        values = ['Title', None, ['', '', ''],
+                  ['', '', ''], '', ImageCorrectionDefaultModel]
+        for attr, val in zip(attributes, values):
+            if not hasattr(self, attr):
+                setattr(self, attr, val)
+        self.file_manager = None
+        self.input_panels=None
+        self._draw_view()
+        
+    def _draw_view(self,):
+        sticky_pad = {'sticky':tk.W+tk.E, 'padx':5, 'pady':2}
+        ttk.Label(self, text=self.title,
+                  font=("TkDefaultFont", 16)
+                  ).grid(row=0, columnspan=2)
+        left_panel = tk.Label(self)
+        self.file_manager = FileManager(left_panel,
+                                        self.default_folder,
+                                        self.img_ext)
+        self.image_correction = ImageCorrection(left_panel,
+                            frame_model=self.image_correction_model)
+        self.input_panels = [self.file_manager,
+                             self.image_correction]
+        if self.additional_panel:
+            self.add_panel = self.additional_panel(left_panel)
+            self.input_panels.append(self.add_panel)
+        for i, panel in enumerate(self.input_panels):
+            panel.grid(row=i, column=0, **sticky_pad)
+        left_panel.grid(row=1, column=0, rowspan=3)
+        self.img_view = ImageView(self,
+                                  img=None, res=(360, 240),
+                                  padx=30, pady=10)
+        self.img_view.grid(row=1, column=1,
+                           columnspan=2, rowspan=2,
+                           sticky=tk.W+tk.E+tk.N)
+        self.image_row = ImageRow(self,
+                        images = [None, None, None],
+                        titles = self.img_titles,
+                        subtitles = self.img_subtitles,
+                        res = (300, 200))
+        self.image_row.grid(row=4, column=0,
+                            columnspan=2,
+                            **sticky_pad)
+        self.grid_button_frame(row=3, column=1)
+        
+    def set_image(self, image):
+        self.img_view.configure(image)
+        
+    def set_image_row(self, images, subtitles, img_mode=None):
+        self.image_row.configure_images(images, img_mode)
+        self.image_row.configure_subtitles(subtitles)
+        
+    def get_input(self):
+        app_input = {}
+        for panel in self.input_panels:
+            app_input = {**app_input, **panel.get_input()}
+        return app_input
+        
+    def get_image_path(self):
+        return self.file_manager.get_image_path()
+        
+    def get_path_wd(self):
+        return self.file_manager.get_path_wd()
+        
+    def next_file(self):
+        self.file_manager.next_file()
+        
+    def get_first_image(self):
+        return self.file_manager.get_first_image()
+        
+    def set_widgets(self, widget_values):
+        self.image_correction.set_widgets(widget_values)
+        if not self.additional_panel:
+            self.additional_panel.set_widgets(widget_values)
+        
+    def get_images(self):
+        return self.file_manager.get_images()
+        
+    def get_file_name(self, *args, **kwargs):
+        return self.file_manager.get_file_name(*args, **kwargs)
+        
+    def get_save_images_status(self):
+        return self.file_manager.get_save_images_status()
+        
+    def save_image(self, img, name, suffix, ext='jpg'):
+        self.file_manager.save_image(img=img,
+                    folder=self.file_manager.get_path_wd(),
+                    name=name, suffix=suffix,
+                    ext=ext)
+                    
+    def set_default_images(self):
+        self.img_view.set_default_image()
+        self.image_row.set_default_images()

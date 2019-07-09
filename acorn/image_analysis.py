@@ -8,7 +8,7 @@ from skimage.filters import threshold_otsu, threshold_mean, threshold_minimum
 from skimage.morphology import watershed, binary_opening, binary_closing
 from skimage.morphology import disk, remove_small_objects
 from scipy import ndimage as ndi
-from skimage.filters import sobel
+from skimage.filters import sobel, roberts
 from skimage.feature import corner_peaks
 from skimage.exposure import equalize_adapthist
 from .accessory_functions import *
@@ -56,6 +56,9 @@ class CorrectedImage:
     
     def get_PILimg(self):
         return self.PILimg
+
+    def get_img_original(self):
+        return self.img_original.copy()
     
     def _get_channel(self):
         """
@@ -151,7 +154,7 @@ class BinaryImage(CorrectedImage):
             self.y_slice = int(self.height / 2)
         if self.mode == 'Borders':
             self.pre_binary = sobel(self.img_corrected)
-        elif self.mode == 'Contrast':
+        elif self.mode == 'Contrast' or self.mode == 'Contrast-positive':
             self.pre_binary = self.img_corrected
         else:
             raise ValueError("There is no mode '{}'!".format(self.mode))
@@ -162,6 +165,8 @@ class BinaryImage(CorrectedImage):
             self.img_binary = self.pre_binary > self.thresh
         elif self.mode == 'Contrast':
             self.img_binary = self.pre_binary < self.thresh
+        elif self.mode == 'Contrast-positive':
+            self.img_binary = self.pre_binary > self.thresh
         return self.img_binary
     
     def _get_filter(self):
@@ -289,9 +294,14 @@ class WoundImage(BinaryImage):
         plt.show()
         
     def get_stat(self):
-        area = np.sum(self.img_binary)*100/self.pixels
+        area = np.sum(self.img_binary) * 100 / self.pixels
         width = np.sum(self.img_binary) / self.height
-        return [area, width]
+        return (area, width)
+
+    def get_report_stat(self):
+        area, width = self.get_stat()
+        return {'wound_area': round(area, 2),
+                'wound_width': round(width, 2)}
     
     def get_images(self):
         sliced_img = self.get_sliced_img(True, 11)
@@ -322,6 +332,148 @@ class WoundImage(BinaryImage):
         plt.tight_layout()
         plt.show()
         
-    def get_wound_img(self):
+    def get_save_img(self):
         return self.img_wound
+
+
+class CellCounter:
     
+    def __init__(self, img_path):
+        self.binary_filter = 'Minimum'
+        self.mask_filter = 'Otsu'
+        self.offset_binary = 0
+        self.offset_mask = 0
+        self.min_dist = 0
+        self.disk_radius = 0
+        self.size_thresh = 0
+        self.binary_im = BinaryImage(img_path)
+        self.size_thresh = 0
+        self.img_binary = None
+        self.img_binary_mask = None
+        self.img_labeled = None
+        self.img_cells = None
+        self.img_debris = None
+        self.N_objects = 0
+        self.N_cells = 0
+        self.N_debris = 0
+
+    def __call__(self, binary_filter=None, mask_filter=None,
+                 offset_binary=None, offset_mask=None,
+                 min_dist=None, disk_radius=None,
+                 size_thresh=None,
+                 **kwargs):
+        self.binary_filter = binary_filter or self.binary_filter
+        self.mask_filter = mask_filter or self.mask_filter
+        self.offset_binary = offset_binary or self.offset_binary
+        self.offset_mask = offset_mask or self.offset_mask
+        self.min_dist = min_dist or self.min_dist
+        self.disk_radius = disk_radius or self.disk_radius
+        self.size_thresh = size_thresh or self.size_thresh
+        self.img_binary = self.binary_im(filt=binary_filter,
+                mode='Contrast-positive',
+                offset=self.offset_binary, **kwargs)
+        self.img_binary_mask = self.binary_im(filt=mask_filter,
+                mode='Contrast-positive',
+                offset=self.offset_mask, **kwargs)      
+        distance = ndi.distance_transform_edt(self.img_binary)
+        foot_print = disk(self.disk_radius)
+        peaks = corner_peaks(distance, indices=False,
+                             min_distance=int(self.min_dist),
+                             footprint=foot_print)
+        markers = ndi.label(peaks)[0]
+        self.img_labeled = watershed(-distance, markers,
+                                 mask=self.img_binary_mask,
+                                 watershed_line=True)
+        num, inv, self.size = np.unique(self.img_labeled,
+                                        return_inverse=True,
+                                        return_counts=True)
+        inv.shape = self.img_binary.shape
+        self.img_cells = self.img_labeled.copy()
+        self.img_cells[(self.size < self.size_thresh)[inv]] = 0
+        self.img_debris = (self.size < self.size_thresh)[inv]
+        self.N_objects = max(num)
+        self.N_cells = np.sum(self.size[1:] >= self.size_thresh)
+        self.N_debris = self.N_objects - self.N_cells
+
+    def get_stat(self):
+        return (self.N_objects, self.N_debris, self.N_cells)
+
+    def get_additional_stat(self):
+        cell_size = self.size[1:][self.size[1:] >= self.size_thresh]
+        mean_cell_size = np.mean(cell_size)
+        sd_cell_size = np.std(cell_size)
+        confl = np.sum(self.img_cells > 0)/np.prod(self.img_cells.shape)
+        return (mean_cell_size, sd_cell_size, confl*100)
+    
+    def get_report_stat(self):
+        stat = self.get_stat() + self.get_additional_stat()
+        headers = ['N_objects', 'N_cells', 'N_debris',
+                   'mean_cell_size', 'sd_cell_size', 'confl']
+        d = {}
+        for head, st in zip(headers, stat):
+            d[head] = st if st == int(st) else round(st, 2)
+        return d
+
+    def get_outlined_cells(self, border_size=1,
+                           border_color=(255, 0, 0)):
+        img_outlined = self.binary_im.get_img_original()
+        if len(img_outlined.shape) == 2:
+            img_outlined = np.dstack((img_outlined,) * 3)
+        img_borders = roberts(self.img_cells) > 0
+        if border_size > 1:
+            img_borders = ndi.maximum_filter(img_borders, border_size)
+        img_outlined.setflags(write=True)
+        img_outlined[img_borders] = (255, 0, 0)
+        return img_outlined
+
+    def called_with(self):
+        binary_call = self.binary_im.called_with()
+        del binary_call['filt']
+        del binary_call['offset']
+        d = {'binary_filter': self.binary_filter,
+             'mask_filter': self.mask_filter,
+             'offset_binary': self.offset_binary,
+             'offset_mask': self.offset_mask,
+             'min_dist': self.min_dist,
+             'disk_radius': self.disk_radius,
+             'size_thresh': self.size_thresh}
+        return {**binary_call, **d}
+
+    def get_PILimg(self):
+        return self.binary_im.PILimg
+
+    def get_images(self):
+        img_debris_bw = self.img_debris.astype(np.uint8) * 255
+        color_map = generate_cmap(self.N_objects + 1)
+        img_cells_color = color_map(self.img_cells) * 255
+        img_cells_color = img_cells_color.astype(np.uint8)
+        return [self.binary_im.img_corrected,
+                img_debris_bw,
+                #img_cells_color
+                self.get_outlined_cells()]
+
+    def get_image_path(self):
+        return self.binary_im.img_path
+
+    def view_images(self):
+        images = [self.binary_im.img_original] + self.get_images()
+        titles = ['Original image', 'Corrected image',
+                  'Debris', 'Cells']
+        #color_maps = ['']
+        fig, axes = plt.subplots(ncols=2, nrows=2,
+                    sharex=True, sharey=True)
+        axes = axes.ravel()
+        for ax, img, title in zip(axes, images, titles):
+            if len(img.shape) == 2:
+                ax.imshow(img, 'gray')
+            else:
+                ax.imshow(img)
+            ax.set_title(title)
+            ax.axis('off')
+        plt.tight_layout()
+        plt.show()
+    
+    def get_save_img(self):
+        return self.get_outlined_cells()
+
+# поправить cхему выбора порогов в BinaryImage

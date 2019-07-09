@@ -4,6 +4,7 @@ import tkinter as tk
 from tkinter import ttk
 from .accessory_functions import limit_text, save_image, file_namer
 
+
 class ImageFileMixin:
     """
     Adds functionality to file manager panel

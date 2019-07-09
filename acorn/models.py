@@ -1,6 +1,6 @@
 
 # This is an app model.
-# Sets default values, ranges, increment steps, lists of values, ets.
+# Sets default values, ranges, increment steps, lists of values, etc.
 # for widgets of each panel.
 
 import os
@@ -34,84 +34,164 @@ class FileManagerModel(Model):
     
     def __init__(self):
         super().__init__()
-        self.model['recursive'] = {'type': 'checkbutton',
-                                   'text_label': 'Recursive',
-                                   'default': False}
-        self.model['save_images'] = {'type': 'checkbutton',
-                                     'text_label': 'Save wound images',
-                                     'default': False}
+        self.model['recursive'] = {
+                    'type': 'checkbutton',
+                    'text_label': 'Recursive',
+                    'default': False}
+        self.model['save_images'] = {
+                    'type': 'checkbutton',
+                    'text_label': 'Save images',
+                    'default': False}
 
    
-class ImageCorrectionModel(Model):
+class ImageCorrectionDefaultModel(Model):
     
     def __init__(self):
         super().__init__()
-        self.model['channel'] = {'type': 'combobox',
-                                 'text_label': 'Channel',
-                                 'default': 'BW',
-                                 'values': ['BW', 'Red', 'Green', 'Blue']}
-        self.model['bright'] = {'type': 'spinbox',
-                                'text_label': 'Brightness',
-                                'default': 1.0,
-                                'from_': 0.1,
-                                'to': 20,
-                                'increment': 0.1}
-        self.model['contr'] = {'type': 'spinbox',
-                               'text_label': 'Contrast',
-                               'default': 1.2,
-                               'from_':-20,
-                               'to': 20,
-                               'increment':0.1}
-        self.model['blur_radius'] = {'type': 'spinbox',
-                                     'text_label': 'Blur Radius',
-                                     'default': 1,
-                                     'from_': 0,
-                                     'to': 25,
-                                     'increment': 1}
-        self.model['inverse'] = {'type': 'checkbutton',
-                                 'text_label': 'Inverse Image',
-                                 'default': False}
- 
+        self.model['channel'] = {
+                    'type': 'combobox',
+                    'text_label': 'Channel',
+                    'default': 'BW',
+                    'values': ['BW', 'Red', 'Green', 'Blue']}
+        self.model['bright'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Brightness',
+                    'default': 1.0,
+                    'from_': 0.1,
+                    'to': 20,
+                    'increment': 0.1}
+        self.model['contr'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Contrast',
+                    'default': 1.0,
+                    'from_':-20,
+                    'to': 20,
+                    'increment':0.1}
+        self.model['blur_radius'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Blur Radius',
+                    'default': 0,
+                    'from_': 0,
+                    'to': 25,
+                    'increment': 1}
+        self.model['inverse'] = {
+                    'type': 'checkbutton',
+                    'text_label': 'Inverse Image',
+                    'default': False}
+
+
+class ImageCorrectionWoundAssayModel(ImageCorrectionDefaultModel):
+
+    def __init__(self):
+        super().__init__()
+        self.model['contr']['default'] = 1.2
+        self.model['blur_radius']['default'] = 1
+
+
+class ImageCorrectionCellCounterModel(ImageCorrectionDefaultModel):
+
+    def __init__(self):
+        super().__init__()
+        self.model['channel']['default'] = 'Green'
+        
                                           
 class WoundParametersModel(Model):
 
     def __init__(self):
         super().__init__()
-        self.model['mode'] = {'type': 'combobox',
-                              'text_label': 'Mode',
-                              'default': 'Borders',
-                              'values': ['Borders', 'Contrast', 'Minimum']}
-        self.model['filt'] = {'type': 'combobox',
-                              'text_label': 'Mode',
-                              'default': 'Mean',
-                              'values': ['Mean', 'Otsu']}
-        self.model['offset'] = {'type': 'spinbox',
-                                'text_label': 'Offset, %',
-                                'default': 0,
-                                'from_': -50,
-                                'to': 50,
-                                'increment': 0.5}
-        self.model['equal_exposure'] = {'type': 'checkbutton',
-                                        'text_label': 'Equal. exposure',
-                                        'default': True}
-        self.model['disk_radius'] = {'type': 'spinbox',
-                                     'text_label': 'Disk Radius',
-                                     'default': 6,
-                                     'from_': 0,
-                                     'to': 25,
-                                     'increment': 1}
-        self.model['min_wound'] = {'type': 'spinbox',
-                                   'text_label': 'Min wound, %',
-                                   'default': 7,
-                                   'from_': 1,
-                                   'to': 80,
-                                   'increment': 1}
-        self.model['min_objects'] = {'type': 'spinbox',
-                                     'text_label': 'Min wound, %',
-                                     'default': 7,
-                                     'from_': 1,
-                                     'to': 80,
-                                     'increment': 1}
+        self.model['mode'] = {
+                    'type': 'combobox',
+                    'text_label': 'Mode',
+                    'default': 'Borders',
+                    'values': ['Borders', 'Contrast', 'Minimum']}
+        self.model['filt'] = {
+                    'type': 'combobox',
+                    'text_label': 'Mode',
+                    'default': 'Mean',
+                    'values': ['Mean', 'Otsu']}
+        self.model['offset'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Offset, %',
+                    'default': 0,
+                    'from_': -50,
+                    'to': 50,
+                    'increment': 0.5}
+        self.model['equal_exposure'] = {
+                    'type': 'checkbutton',
+                    'text_label': 'Equal. exposure',
+                    'default': True}
+        self.model['disk_radius'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Disk Radius',
+                    'default': 6,
+                    'from_': 0,
+                    'to': 25,
+                    'increment': 1}
+        self.model['min_wound'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Min wound, %',
+                    'default': 7,
+                    'from_': 1,
+                    'to': 80,
+                    'increment': 1}
+        self.model['min_objects'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Min wound, %',
+                    'default': 7,
+                    'from_': 1,
+                    'to': 80,
+                    'increment': 1}
+
+
+class CellCounterModel(Model):
+
+    def __init__(self):
+        super().__init__()
+        self.model['binary_filter'] = {
+                    'type': 'combobox',
+                    'text_label': 'Binary filter',
+                    'default': 'Minimum',
+                    'values': ['Mean', 'Otsu', 'Minimum']}
+        self.model['mask_filter'] = {
+                    'type': 'combobox',
+                    'text_label': 'Mask filter',
+                    'default': 'Otsu',
+                    'values': ['Mean', 'Otsu', 'Minimum']}
+        self.model['offset_binary'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Binary offset, %',
+                    'default': 0,
+                    'from_': -50,
+                    'to': 50,
+                    'increment': 1}
+        self.model['offset_mask'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Mask offset, %',
+                    'default': 0,
+                    'from_': -50,
+                    'to': 50,
+                    'increment': 1}
+        self.model['min_dist'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Min distance',
+                    'default': 3,
+                    'from_': 1,
+                    'to': 50,
+                    'increment': 1}
+        self.model['disk_radius'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Disk radius',
+                    'default': 3,
+                    'from_': 1,
+                    'to': 25,
+                    'increment': 1}
+        self.model['size_thresh'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Size threshold',
+                    'default': 25,
+                    'from_': 0,
+                    'to': 1000,
+                    'increment': 1}
 
 
 class AppModel(Model):
