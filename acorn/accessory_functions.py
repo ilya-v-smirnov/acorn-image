@@ -24,14 +24,17 @@ def get_threshold(img, threshold_fun, offset_perc=0, **kwargs):
     Offset should be provided as percentage value.
     """
     data_type = str(img.dtype)
-    if data_type == "bool" or data_type == "float64":
+    if data_type == 'bool' or data_type.startswith('float'):
         offset = offset_perc / 100
+    elif data_type.startswith('uint'):
+        fact = int(data_type.replace('uint', ''))
+        offset = int(round(offset_perc * 2**fact / 100))
     else:
-        offset = int(round(offset_perc * 256 / 100))
+        raise ValueError('Incorrect data type of img: {}'.format(data_type))
     if len(kwargs) > 0:
         return threshold_fun(img, **kwargs) + offset
     return threshold_fun(img) + offset
-
+    
 
 def save_image(img, path, color_map='gray'):
     """

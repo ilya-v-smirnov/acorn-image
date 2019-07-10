@@ -103,12 +103,12 @@ class WoundParametersModel(Model):
                     'type': 'combobox',
                     'text_label': 'Mode',
                     'default': 'Borders',
-                    'values': ['Borders', 'Contrast', 'Minimum']}
+                    'values': ['Borders', 'Contrast']}
         self.model['filt'] = {
                     'type': 'combobox',
-                    'text_label': 'Mode',
+                    'text_label': 'Binary filter',
                     'default': 'Mean',
-                    'values': ['Mean', 'Otsu']}
+                    'values': ['Mean', 'Otsu', 'Minimum']}
         self.model['offset'] = {
                     'type': 'spinbox',
                     'text_label': 'Offset, %',
@@ -136,7 +136,7 @@ class WoundParametersModel(Model):
                     'increment': 1}
         self.model['min_objects'] = {
                     'type': 'spinbox',
-                    'text_label': 'Min wound, %',
+                    'text_label': 'Min objects, %',
                     'default': 7,
                     'from_': 1,
                     'to': 80,
