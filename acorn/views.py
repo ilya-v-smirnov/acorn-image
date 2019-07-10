@@ -169,6 +169,10 @@ class FileManager(ImageFileMixin, FramePanel):
         if with_ext:
             return file_name
         return os.path.splitext(file_name)[0]
+
+    def set_file_name(self, path):
+        filename = os.path.basename(path)
+        self.widgets['file'].set(filename)
         
     def get_save_images_status(self):
         return self.widgets['save_images'].get()
@@ -260,6 +264,7 @@ class TableView(tk.Toplevel):
     
     def __init__(self, parent, table, columns=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
+        self.grab_set()
         self.title = 'Report'
         self.table = table
         self.columns = columns or list(self.table[0].keys())
@@ -470,6 +475,9 @@ class AssayView(ButtonPanel, tk.Frame):
         
     def get_file_name(self, *args, **kwargs):
         return self.file_manager.get_file_name(*args, **kwargs)
+
+    def set_file_name(self, path):
+        self.file_manager.set_file_name(path)
         
     def get_save_images_status(self):
         return self.file_manager.get_save_images_status()

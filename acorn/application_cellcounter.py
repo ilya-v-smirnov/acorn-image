@@ -15,12 +15,11 @@ class CellCounterButtonCommands(CommonButtonCommands):
     """
 
     def _select_image(self, img_path):
+        result = False
         if img_path:
-            self.image = CellCounter(img_path)
-            return True
-        else:
-            return False
-        
+            result = super()._select_image(img_path, CellCounter)
+        return result
+            
     def _apply(self):
         if self._select_image(self.get_image_path()):
             self._view_file()

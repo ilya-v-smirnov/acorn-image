@@ -13,7 +13,6 @@ class MainView(tk.Frame):
         self.cell_counter_view = None
         self.wound_assay_view = None
         super().__init__(parent, *args, **kwargs)
-        
         title = ttk.Label(self, text='Acorn Image', 
                          font=("TkDefaultFont", 16))
         button_wound_assay = ttk.Button(self, text='Wound Assay',
@@ -21,9 +20,9 @@ class MainView(tk.Frame):
         button_cell_counter = ttk.Button(self, text='Cell Counter',
                                         command=self.start_cell_counter)                                        
 
-        title.pack(side=tk.TOP, fill=tk.BOTH)
-        button_wound_assay.pack(side=tk.BOTTOM, fill=tk.X)
-        button_cell_counter.pack(side=tk.BOTTOM, fill=tk.X)
+        title.pack(side=tk.TOP, fill=tk.BOTH, pady=10)
+        button_wound_assay.pack(side=tk.BOTTOM, fill=tk.X, padx=10)
+        button_cell_counter.pack(side=tk.BOTTOM, fill=tk.X, padx=10)
 
     def start_cell_counter(self):
         self.cell_counter_view = tk.Toplevel(self)
@@ -47,6 +46,7 @@ class AcornImage(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title('Acorn Image')
+        self.geometry('200x130')
         self.resizable(width=False, height=False)
         self.mainview = MainView(self)
         self.mainview.pack()

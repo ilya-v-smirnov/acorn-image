@@ -407,7 +407,7 @@ class CellCounter:
     
     def get_report_stat(self):
         stat = self.get_stat() + self.get_additional_stat()
-        headers = ['N_objects', 'N_cells', 'N_debris',
+        headers = ['N_objects', 'N_debris', 'N_cells',
                    'mean_cell_size', 'sd_cell_size', 'confl']
         d = {}
         for head, st in zip(headers, stat):
