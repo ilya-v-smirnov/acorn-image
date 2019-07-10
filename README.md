@@ -3,13 +3,14 @@
 DESCRIPTION
 ===========
 
-This program allows estimation of wound size for wound healing assay in jpeg photos.
+This program allows cells counting (Cell Counter) and estimation of wound size for wound healing assay (Wound assay) in jpeg photos.
 
 
 AUTHOR INFORMATION
 ==================
 
 Ilya V Smirnov, 2019
+Hybridoma Technology Laboratory, Russian Research Center for Radiology and Surgical Technologies named after acad. A.M. Granov.
 
 
 REQUIREMENTS
