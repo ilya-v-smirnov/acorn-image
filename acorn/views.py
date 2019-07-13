@@ -138,6 +138,7 @@ class FileManager(ImageFileMixin, FramePanel):
             self._find_images()
             self.widgets['file'].set(self.first_img)
             self.widgets['file'].configure(values=self.images)
+            self.configure_buttons()
         
     def _browse_button2(self):
         chosen_path = filedialog.askdirectory(parent=self)
@@ -176,6 +177,9 @@ class FileManager(ImageFileMixin, FramePanel):
         
     def get_save_images_status(self):
         return self.widgets['save_images'].get()
+
+    def configure_buttons(self):
+        pass
                    
        
 class ImageCorrection(FramePanel):
@@ -309,8 +313,10 @@ class ButtonPanel:
     def __init__(self, parent, *args, **kwargs):    
         sticky_pad = {"sticky": tk.W+tk.E, "padx": 5, "pady": 2}
         self.button_frame = tk.Frame(parent, *args, **kwargs)
-        self.view_file_but = ttk.Button(self.button_frame,
+        self.view_file_but = tk.Button(self.button_frame,
                                 text="\n  View file  \n",
+                                relief='groove',
+                                state='disabled',
                                 command=self._view_file)
         self.view_file_but.grid(row=0, column=0, rowspan=2,
                                 **sticky_pad)        
@@ -324,9 +330,11 @@ class ButtonPanel:
                             self._clear_report, self._save_report)
         self.buttons = []
         for button, fun in zip(button_name, button_functions):
-            self.buttons.append(ttk.Button(self.button_frame,
-                                           text=button,
-                                           command=fun))
+            self.buttons.append(tk.Button(self.button_frame,
+                                          text=button,
+                                          relief='groove',
+                                          state='disabled',
+                                          command=fun))
         for i, button in enumerate(self.buttons):
             row = i % 2
             col = i // 2 + 1
@@ -335,7 +343,51 @@ class ButtonPanel:
     
     def grid_button_frame(self, *args, **kwargs):
         self.button_frame.grid(*args, **kwargs)
+
+    def activate_view_apply(self):
+        self.view_file_but.configure(state='normal')
+        self.buttons[0].configure(state='normal')
+
+    def deactivate_view_apply(self):
+        self.view_file_but.configure(state='disabled')
+        self.buttons[0].configure(state='disabled')
+
+    def activate_next(self):
+        self.buttons[1].configure(state='normal')
     
+    def deactivate_next(self):
+        self.buttons[1].configure(state='disabled')
+
+    def activate_apply_all(self):
+        self.buttons[2].configure(state='normal')
+
+    def activate_add_to_report(self):
+        self.buttons[4].configure(state='normal')
+    
+    def deactivate_add_to_report(self):
+        self.buttons[4].configure(state='disabled')
+
+    def activate_view_images(self):
+        self.buttons[3].configure(state='normal')
+
+    def deactivate_view_images(self):
+        self.buttons[3].configure(state='disabled')
+
+    def activate_report_buttons(self):
+        ind = [5, 6, 7]
+        for i in ind:
+            self.buttons[i].configure(state='normal')
+
+    def deactivate_report_buttons(self):
+        ind = [5, 6, 7]
+        for i in ind:
+            self.buttons[i].configure(state='disabled')
+
+    def deactivate_all_buttons(self):
+        self.view_file_but.configure(state='disabled')
+        for button in self.buttons:
+            button.configure(state='disabled')
+
     def _view_file(self):
         pass
     
@@ -414,6 +466,7 @@ class AssayView(ButtonPanel, tk.Frame):
         self.file_manager = FileManager(left_panel,
                                         self.default_folder,
                                         self.img_ext)
+        self.file_manager.configure_buttons = self.configure_buttons
         self.image_correction = ImageCorrection(left_panel,
                             frame_model=self.image_correction_model)
         self.input_panels = [self.file_manager,
@@ -439,7 +492,16 @@ class AssayView(ButtonPanel, tk.Frame):
                             columnspan=2,
                             **sticky_pad)
         self.grid_button_frame(row=3, column=1)
+        self.configure_buttons()
         
+    def configure_buttons(self):
+        if self.get_image_path():
+            self.activate_view_apply()
+        else:
+            self.deactivate_view_apply()
+        if len(self.get_images()) > 1:
+            self.activate_apply_all()
+
     def set_image(self, image):
         self.img_view.configure(image)
         
@@ -491,3 +553,14 @@ class AssayView(ButtonPanel, tk.Frame):
     def set_default_images(self):
         self.img_view.set_default_image()
         self.image_row.set_default_images()
+
+    def _after_apply(self):
+        images = self.get_images()
+        filename = self.get_file_name()
+        index = images.index(filename)
+        if index < len(images)-1:
+            self.activate_next()
+        else:
+            self.deactivate_next()
+        self.activate_add_to_report()
+        self.activate_view_images()

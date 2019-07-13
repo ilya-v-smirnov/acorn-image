@@ -55,31 +55,8 @@ def generate_cmap(N):
     colors.extend(new_colors)
     cm = LinearSegmentedColormap.from_list("random_colors", colors, N=N)
     return cm
-  
-  
-def show_images(images):
-    """
-    Shows arbitary number of numpy images provided as a list.
-    """
-    N = len(images)
-    ncols = N if N <= 2 else 3
-    nrows = ceil(N / ncols)
-    fig, axes = plt.subplots(ncols=ncols, nrows=nrows,
-                             sharex=False, sharey=False)
-    if nrows > 1:
-        axes = axes.ravel()
-        for ax in axes:
-            ax.axis('off')
-    if ncols == 1:
-        axes.imshow(images[0], cmap='gray')
-    else:
-        for i, im in enumerate(images):
-            axes[i].imshow(im, cmap='gray')
-    for ax in axes:
-        ax.axis('off')
-    plt.show()
- 
- 
+
+
 def is_even(N):
     return N % 2 == 0
   

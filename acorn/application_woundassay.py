@@ -32,6 +32,7 @@ class WoundAssayButtonCommands(CommonButtonCommands):
                 self.set_image_row(images,
                             subtitles=['', '', stat_text])
                 self.set_widgets({'channel': self.image.channel})
+                self._after_apply()
             
 
 class WoundAssay(WoundAssayButtonCommands, WoundAssayView):

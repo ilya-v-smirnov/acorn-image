@@ -54,11 +54,11 @@ class CommonButtonCommands:
             if not dict_identical(row, self.result[-1]):
                 self.result.append(row)
                 self._image_saver()
-
+            self.activate_report_buttons()
+            self.deactivate_add_to_report()
     
     def _apply_all(self):
         first_img = self.get_first_image()
-        print(first_img)
         self.set_file_name(first_img)
         if self._select_image(first_img):
             n_files = len(self.get_images())
@@ -69,7 +69,6 @@ class CommonButtonCommands:
                 for i in range(n_files-2):
                     self._next()
                     self._add_to_report()
-                    print(self.image)
                 self.draw_gui = True
             self._next()
             self._add_to_report()
@@ -77,6 +76,9 @@ class CommonButtonCommands:
     def _clear_report(self):
         self.result.clear()
         self.set_default_images()
+        self.deactivate_add_to_report()
+        self.deactivate_report_buttons()
+        self.deactivate_view_images()
     
     @backend_switcher
     def _view_images(self):
@@ -93,7 +95,8 @@ class CommonButtonCommands:
                      dirName=None, fileExt='.csv'):
         if len(self.result) > 0:
             fileTypes = [('csv files', '.csv'), ('all files', '.*')]
-            options = {'defaultextension': fileExt,
+            options = {'parent': self,
+                       'defaultextension': fileExt,
                        'filetypes': fileTypes,
                        'initialdir': dirName,
                        'initialfile': fileName,

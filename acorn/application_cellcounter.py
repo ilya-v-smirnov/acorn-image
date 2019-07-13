@@ -35,7 +35,7 @@ class CellCounterButtonCommands(CommonButtonCommands):
                             subtitles=[n_obj, n_deb, n_cells],
                             img_mode=['P', 'P', 'RGB'])
                 self.set_widgets({'channel': self.image.binary_im.channel})
-            
+                self._after_apply()
 
 class CellCounterApp(CellCounterButtonCommands, CellCounterView):
     """
