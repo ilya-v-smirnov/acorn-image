@@ -22,18 +22,20 @@ class WoundAssayButtonCommands(CommonButtonCommands):
         
     def _apply(self):
         if self._select_image(self.get_image_path()):
+            if not self.draw_progress:
+                self.show_wait_window()
             self._view_file()
             input = self.get_input()
             self.image(**input)
             stat = self.image.get_stat()
-            if self.draw_gui:
-                images = self.image.get_images()
-                stat_text = "Wound Area: " + str(round(stat[0], 1)) + '%'
-                self.set_image_row(images,
-                            subtitles=['', '', stat_text])
-                self.set_widgets({'channel': self.image.channel})
-                self._after_apply()
-            
+            images = self.image.get_images()
+            stat_text = "Wound Area: " + str(round(stat[0], 1)) + '%'
+            self.set_image_row(images,
+                        subtitles=['', '', stat_text])
+            self.set_widgets({'channel': self.image.channel})
+            self._after_apply()
+            if not self.draw_progress:
+                self.destroy_wait_window()
 
 class WoundAssay(WoundAssayButtonCommands, WoundAssayView):
     """

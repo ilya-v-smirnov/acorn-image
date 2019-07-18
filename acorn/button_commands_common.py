@@ -12,7 +12,7 @@ class CommonButtonCommands:
     def __init__(self):
         self.image = None
         self.result = []
-        self.draw_gui = True
+        self.draw_progress = False
 
     def _select_image(self, img_path, FUN):
         if img_path:
@@ -58,21 +58,19 @@ class CommonButtonCommands:
             self.deactivate_add_to_report()
     
     def _apply_all(self):
-        first_img = self.get_first_image()
-        self.set_file_name(first_img)
-        if self._select_image(first_img):
-            n_files = len(self.get_images())
-            self._apply()
-            self._add_to_report()
-            if n_files > 1:
-                self.draw_gui = False
-                for i in range(n_files-2):
-                    self._next()
-                    self._add_to_report()
-                self.draw_gui = True
-            self._next()
-            self._add_to_report()
-    
+        self.set_file_name(self.get_first_image())
+        self.n_files = len(self.get_images())
+        if self.n_files > 1:
+            self.draw_progress = True
+            self.progress_widget()
+            for _ in range(self.n_files):
+                self._apply()
+                self._add_to_report()
+                self.update_progressbar()
+                self.next_file()
+            self.destroy_progressbar()
+            self.draw_porgress = False
+   
     def _clear_report(self):
         self.result.clear()
         self.set_default_images()

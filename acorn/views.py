@@ -152,6 +152,7 @@ class FileManager(ImageFileMixin, FramePanel):
         self._find_images()
         self.widgets['file'].set(self.first_img)
         self.widgets['file'].configure(values=self.images)
+        self.configure_buttons()
         
     def get_image_path(self):
         fileName = self.widgets['file'].get()
@@ -383,11 +384,6 @@ class ButtonPanel:
         for i in ind:
             self.buttons[i].configure(state='disabled')
 
-    def deactivate_all_buttons(self):
-        self.view_file_but.configure(state='disabled')
-        for button in self.buttons:
-            button.configure(state='disabled')
-
     def _view_file(self):
         pass
     
@@ -553,6 +549,65 @@ class AssayView(ButtonPanel, tk.Frame):
     def set_default_images(self):
         self.img_view.set_default_image()
         self.image_row.set_default_images()
+
+    def _get_geom_pop_window(self, width, height):
+        rootx, rooty = self.winfo_rootx(), self.winfo_rooty()
+        root_width, root_height = self.winfo_width(), self.winfo_height()
+        pos_x = int(rootx + root_width/2 - width/2)
+        pos_y = int(rooty + root_height/2 - height/2)
+        return '%dx%d+%d+%d' % (width, height, pos_x, pos_y)
+
+    def show_wait_window(self):
+        self.wait_window = tk.Toplevel(self,
+                            highlightbackground='red',
+                            highlightthickness=1)
+        self.wait_window.overrideredirect(True)
+        lab = tk.Label(self.wait_window, text='Please, wait...',
+                       fg='red')
+        lab.pack(expand=1, anchor=tk.CENTER)
+        geom = self._get_geom_pop_window(150, 75)
+        self.wait_window.geometry(geom)
+        self.wait_window.update_idletasks()
+        self.wait_window.grab_set()
+
+    def destroy_wait_window(self):
+        self.wait_window.destroy()
+
+    def progress_widget(self):
+        self.progress_window = tk.Toplevel(self,
+                                highlightcolor='red',
+                                highlightbackground='red',
+                                highlightthickness=1)
+        self.progress_window.overrideredirect(True)
+        geom = self._get_geom_pop_window(300, 100)
+        self.progress_window.geometry(geom)
+        lab = tk.Label(self.progress_window, text='Progress...',
+                                fg='red')
+        lab.grid(row=0, column=0, sticky=tk.W, padx=10, pady=5)
+        self.fc = 0
+        self.fc_perc = 0
+        self.file_counter = tk.Label(self.progress_window,
+                                text=str(self.fc)+' out of '+str(self.n_files),
+                                fg='red')
+        self.file_counter.grid(row=1, column=0, sticky=tk.N+tk.S)
+        self.progressbar = ttk.Progressbar(self.progress_window, orient=tk.HORIZONTAL, 
+                                           length=270, mode='determinate')
+        self.progressbar.grid(row=2, column=0, sticky=tk.W+tk.E, padx=10, pady=5)
+        self.progressbar['value'] = 0
+        self.update()
+        self.progress_window.focus_set()
+        self.progress_window.grab_set()
+        self.progress_window.update()
+        
+    def update_progressbar(self):
+        self.fc += 1
+        self.fc_perc = round(self.fc*100/self.n_files)
+        self.file_counter.configure(text=str(self.fc)+' out of '+str(self.n_files))
+        self.progressbar['value'] = self.fc_perc
+        self.progress_window.update()
+
+    def destroy_progressbar(self):
+        self.progress_window.destroy()
 
     def _after_apply(self):
         images = self.get_images()

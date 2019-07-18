@@ -53,7 +53,7 @@ class ValidatedMixin:
     def _focusout_invalid(self):
         self._toggle_error(True)
         
-    def _key_invalid(self):
+    def _key_invalid(self, proposed, current, char, event, index, action):
         pass
         
     def trigger_focusout_validation(self):

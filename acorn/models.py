@@ -130,17 +130,17 @@ class WoundParametersModel(Model):
         self.model['min_wound'] = {
                     'type': 'spinbox',
                     'text_label': 'Min wound, %',
-                    'default': 7,
-                    'from_': 1,
+                    'default': 1.5,
+                    'from_': 0,
                     'to': 80,
-                    'increment': 1}
+                    'increment': 0.5}
         self.model['min_objects'] = {
                     'type': 'spinbox',
                     'text_label': 'Min objects, %',
                     'default': 7,
-                    'from_': 1,
+                    'from_': 0,
                     'to': 80,
-                    'increment': 1}
+                    'increment': 0.5}
 
 
 class CellCounterModel(Model):

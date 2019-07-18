@@ -22,20 +22,23 @@ class CellCounterButtonCommands(CommonButtonCommands):
             
     def _apply(self):
         if self._select_image(self.get_image_path()):
+            if not self.draw_progress:
+                self.show_wait_window()
             self._view_file()
             app_input = self.get_input()
             self.image(**app_input)
             stat = self.image.get_stat()
-            if self.draw_gui:
-                images = self.image.get_images()
-                n_obj = 'Number of objects:' + str(stat[0])
-                n_deb = 'Number of debris:' + str(stat[1])
-                n_cells = 'Number of cells:' + str(stat[2])
-                self.set_image_row(images,
-                            subtitles=[n_obj, n_deb, n_cells],
-                            img_mode=['P', 'P', 'RGB'])
-                self.set_widgets({'channel': self.image.binary_im.channel})
-                self._after_apply()
+            images = self.image.get_images()
+            n_obj = 'Number of objects:' + str(stat[0])
+            n_deb = 'Number of debris:' + str(stat[1])
+            n_cells = 'Number of cells:' + str(stat[2])
+            self.set_image_row(images,
+                        subtitles=[n_obj, n_deb, n_cells],
+                        img_mode=['P', 'P', 'RGB'])
+            self.set_widgets({'channel': self.image.binary_im.channel})
+            self._after_apply()
+            if not self.draw_progress:
+                self.wait_window.destroy()
 
 class CellCounterApp(CellCounterButtonCommands, CellCounterView):
     """
