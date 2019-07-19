@@ -2,7 +2,7 @@
 import tkinter as tk
 from tkinter import ttk
 from decimal import Decimal, InvalidOperation
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 from numpy import asarray
 import matplotlib.pyplot as plt
 from .accessory_functions import fig2array, backend_switcher
@@ -226,7 +226,7 @@ class ImageButton(ttk.Button):
                  *args, **kwargs):
         self.res = res
         self.img = PILimg or self._default_image()
-        self.icon = self._make_icon()
+        self.icon = ImageTk.PhotoImage(self._make_icon(self.img, self.res))
         super().__init__(parent, image=self.icon,
                          command=self.open_in_window,
                          *args, **kwargs)
@@ -244,10 +244,10 @@ class ImageButton(ttk.Button):
         plt.close(fig)
         return Image.fromarray(arr)
         
-    def _make_icon(self):
-        img = self.img.resize(self.res, Image.ANTIALIAS)
-        tk_img = ImageTk.PhotoImage(img)
-        return tk_img
+    @staticmethod
+    def _make_icon(PILimg, res):
+        img = PILimg.resize(res, Image.ANTIALIAS)
+        return img
 
     @backend_switcher
     def open_in_window(self):
@@ -262,8 +262,82 @@ class ImageButton(ttk.Button):
     
     def configure_image_button(self, img):
         self.img = img
-        self.icon = self._make_icon()
+        self.icon = ImageTk.PhotoImage(self._make_icon(self.img, self.res))
         self.configure(image=self.icon)
         
     def set_default_image(self):
         self.configure_image_button(self._default_image())
+
+    def get_icon_res(self):
+        return self.res
+
+    def update_image_button(self, PILicon):
+        self.icon = ImageTk.PhotoImage(PILicon)
+        self.configure(image=self.icon)
+
+
+class ImageButtonWithScale(tk.Frame):
+
+    def __init__(self, parent, PILimg=None, res=(300, 200), **kwargs):
+        super().__init__(parent)
+        self.img_but = ImageButton(self, PILimg=PILimg, res=res, **kwargs)
+        self.img_but.grid(row=0, column=0, sticky=tk.W+tk.E+tk.N+tk.S)
+        self.active_slider = True
+        self.scale = tk.Scale(self, from_=0, to=100,
+                                orient=tk.VERTICAL,
+                                showvalue=0, width=5,
+                                sliderlength=10,
+                                command=self._move_slider)
+        self.scale.set(50)
+        self.scale.bind('<MouseWheel>', self._mouse_wheel_movement)
+        if not PILimg:
+            self.active_slider = False
+            self.scale.configure(state='disabled')    
+        self.scale.grid(row=0, column=1, sticky=tk.W+tk.E+tk.N+tk.S)
+
+    def make_icon(self):
+        res = self.img_but.get_icon_res()
+        return self.img_but._make_icon(self.img_but.img, res)
+    
+    def _move_slider(self, position):
+        img = self.make_icon().convert('RGB')
+        if self.active_slider:
+            pos_y = int(img.size[1]*int(position)/100)
+            draw = ImageDraw.Draw(img)
+            draw.line([(0, pos_y), (img.size[0], pos_y)], fill=(255, 0, 0), width=3)
+            del draw
+        self.img_but.update_image_button(img)
+        self.slider_respond(position)
+
+    def configure_image_button(self, img, slider_position=50):
+        if img:
+            self.active_slider = True
+            self.scale.configure(state='normal')
+            self.img_but.configure_image_button(img)
+            self._move_slider(slider_position)
+        else:
+            self.active_slider = False
+            self.scale.configure(state='disabled')
+            self.set_default_image()
+
+    def set_default_image(self):
+        self.img_but.set_default_image()
+        self.active_slider = False
+        self.scale.configure(state='disabled')
+
+    def slider_respond(self, position):
+        pass
+
+    def set_slider(self, position):
+        self.active_slider = True
+        self.scale.set(position)
+
+    def _mouse_wheel_movement(self, event):
+        if self.active_slider:
+            position = self.scale.get()
+            delta = -event.delta / 60
+            new_position = position + delta
+            if new_position >= 0 and new_position <= 100:
+                self._move_slider(new_position)
+                self.set_slider(new_position)
+            self.update_idletasks()

@@ -39,6 +39,7 @@ class CellCounterButtonCommands(CommonButtonCommands):
             self._after_apply()
             if not self.draw_progress:
                 self.wait_window.destroy()
+            self.grab_set()
 
 class CellCounterApp(CellCounterButtonCommands, CellCounterView):
     """

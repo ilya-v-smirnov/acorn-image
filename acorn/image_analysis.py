@@ -139,7 +139,6 @@ class BinaryImage(CorrectedImage):
         super().__init__(img_path)
         self.pre_binary = None
         self.img_binary = None
-        self.y_slice = None
         self.thresh = None
         
     def __call__(self, filt,
@@ -150,8 +149,6 @@ class BinaryImage(CorrectedImage):
         self.filt = filt
         self.mode = mode
         self.offset = offset
-        if y_slice is None:
-            self.y_slice = int(self.height / 2)
         if self.mode == 'Borders':
             self.pre_binary = sobel(self.img_corrected)
         elif self.mode == 'Contrast' or self.mode == 'Contrast-positive':
@@ -180,31 +177,10 @@ class BinaryImage(CorrectedImage):
         plt.imshow(self.img_binary, cmap='gray')
         plt.axis('off')
         plt.show()
-    
-    def get_sliced_img(self, show_slice=False,
-                       line_width=5):
-        if self.y_slice is None or not show_slice:
-            return self.img_corrected
-        half_width = floor(line_width/2)
-        start = self.y_slice - half_width
-        if start < 0:
-            start = 0
-        end = self.y_slice + half_width + 1
-        if end > self.height:
-            end = half_width
-        if is_even(line_width):
-            line_width += 1
-        img_colored = np.dstack((self.img_corrected,) * 3)
-        line = np.array((255, 0, 0) * (end-start) * self.width)
-        line.shape = (end-start, self.width, 3)
-        img_colored[start:end,:,] = line
-        return img_colored
-
-    def _slice_img(self):
-        return self.pre_binary[self.y_slice,]
-        
-    def get_image_slice(self):
-        im_slice = self._slice_img()
+      
+    def get_image_slice(self, position=50):
+        y_slice = int(self.height*position/100)
+        im_slice = self.pre_binary[y_slice,]
         x = np.arange(len(im_slice))
         fig = plt.figure(figsize=plt.figaspect(self.height/self.width))
         plt.plot(x, im_slice, color='red')
@@ -214,12 +190,7 @@ class BinaryImage(CorrectedImage):
         arr = fig2array(fig)
         plt.close()
         return arr
-        
-    def show_slice(self):
-        im_slice = self.get_image_slice(self.y_slice)
-        plt.imshow(im_slice)
-        plt.show()
-        
+               
     def called_with(self):
         d = {'filt': self.filt,
              'mode': self.mode,
@@ -304,9 +275,9 @@ class WoundImage(BinaryImage):
                 'wound_width': round(width, 2)}
     
     def get_images(self):
-        sliced_img = self.get_sliced_img(True, 11)
+        #sliced_img = self.get_sliced_img(True, 11)
         im_slice = self.get_image_slice()
-        return [sliced_img, im_slice, self.img_wound]
+        return [self.img_corrected, im_slice, self.img_wound]
         
     def called_with(self):
         d = {'disk_radius': self.disk_radius,
@@ -449,7 +420,6 @@ class CellCounter:
         img_cells_color = img_cells_color.astype(np.uint8)
         return [self.binary_im.img_corrected,
                 img_debris_bw,
-                #img_cells_color
                 self.get_outlined_cells()]
 
     def get_image_path(self):

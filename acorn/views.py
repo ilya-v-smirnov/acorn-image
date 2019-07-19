@@ -231,16 +231,22 @@ class ImageRow(tk.Frame):
     """
     
     def __init__(self, parent, images,
-                 titles, subtitles, res, *args, **kwargs):
+                 titles, subtitles, res,
+                 scales,
+                 *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.buttons = []
         self.subtitles = subtitles
         self.sub_labels = []
         sticky_pad = {'sticky': tk.E, 'padx': 5, 'pady': 5}
-        for i, (img, title, subtitl) in enumerate(zip(images, titles, self.subtitles)):
+        pars = zip(images, scales, titles, self.subtitles)
+        for i, (img, scale, title, subtitl) in enumerate(pars):
             ttk.Label(self, text=title,
                      font=("TkDefaultFont", 12)).grid(row=0, column=i)
-            self.buttons.append(w.ImageButton(self, img, res))
+            if scale:
+                self.buttons.append(w.ImageButtonWithScale(self, img, res))
+            else:
+                self.buttons.append(w.ImageButton(self, img, res))
             self.buttons[i].grid(row=1, column=i, **sticky_pad)
             self.sub_labels.append(ttk.Label(self,
                                    text=subtitl, font=("TkDefaultFont", 12)))
@@ -260,7 +266,7 @@ class ImageRow(tk.Frame):
     def set_default_images(self):
         for button in self.buttons:
             button.set_default_image()
-            
+
 
 class TableView(tk.Toplevel):
     """
@@ -426,6 +432,7 @@ class AssayView(ButtonPanel, tk.Frame):
     - self.additional_panel, None or FramePanel;
     - self.img_titles, list of three str;
     - self.img_subtitles, list of three str;
+    - self.img_scales, list of three bool;
     - self.img_filename_suffix, str;
     - self.image_correction_model, Model.
     If not defined these attribute will have default
@@ -442,10 +449,16 @@ class AssayView(ButtonPanel, tk.Frame):
         self.img_ext = img_ext
         attributes = ['title', 'additional_panel',
                       'img_titles', 'img_subtitles',
+                      'img_scales',
                       'img_filename_suffix',
                       'image_correction_model']
-        values = ['Title', None, ['', '', ''],
-                  ['', '', ''], '', ImageCorrectionDefaultModel]
+        values = ['Title', # title
+                  None, # additional_panel
+                  ['', '', ''], # img_titles
+                  ['', '', ''], # img_subtitels
+                  [False, False, False], # img_scaels
+                  '', # img_filename_suffix
+                  ImageCorrectionDefaultModel] # image_correction_model
         for attr, val in zip(attributes, values):
             if not hasattr(self, attr):
                 setattr(self, attr, val)
@@ -483,6 +496,7 @@ class AssayView(ButtonPanel, tk.Frame):
                         images = [None, None, None],
                         titles = self.img_titles,
                         subtitles = self.img_subtitles,
+                        scales = self.img_scales,
                         res = (300, 200))
         self.image_row.grid(row=4, column=0,
                             columnspan=2,
@@ -549,6 +563,7 @@ class AssayView(ButtonPanel, tk.Frame):
     def set_default_images(self):
         self.img_view.set_default_image()
         self.image_row.set_default_images()
+        self.image_row.configure_subtitles(['', '', ''])
 
     def _get_geom_pop_window(self, width, height):
         rootx, rooty = self.winfo_rootx(), self.winfo_rooty()
@@ -559,6 +574,7 @@ class AssayView(ButtonPanel, tk.Frame):
 
     def show_wait_window(self):
         self.wait_window = tk.Toplevel(self,
+                            highlightcolor='red',
                             highlightbackground='red',
                             highlightthickness=1)
         self.wait_window.overrideredirect(True)

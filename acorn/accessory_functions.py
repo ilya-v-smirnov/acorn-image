@@ -1,6 +1,6 @@
 
 import numpy as np
-from matplotlib.pyplot import imsave, switch_backend
+import matplotlib.pyplot as plt #import imsave, switch_backend
 from matplotlib.colors import LinearSegmentedColormap
 from math import ceil
 import csv
@@ -41,9 +41,9 @@ def save_image(img, path, color_map='gray'):
     Saves numpy images using matplotlib interface.
     """
     if len(img.shape) == 2:
-        imsave(path, img, cmap=color_map)
+        plt.imsave(path, img, cmap=color_map)
     else:
-        imsave(path, img)
+        plt.imsave(path, img)
 
 
 def generate_cmap(N):
@@ -77,9 +77,9 @@ def dict_identical(d1, d2):
   
 def backend_switcher(fun):
     def switcher(*args, **kwargs):
-        switch_backend('TkAgg')
+        plt.switch_backend('TkAgg')
         fun(*args, **kwargs)
-        switch_backend('Agg')
+        plt.switch_backend('Agg')
     return switcher
    
    
@@ -116,3 +116,17 @@ def file_namer(folder, basename='file', suffix=None, num=0, ext=''):
         return file_namer(folder, basename, suffix, num, ext)
     else:
         return proposed
+
+
+# def get_image_slice(img, y_slice, threshold, res):
+#         y = int(y_slice*img.shape[1]/100)
+#         im_slice = img[y,]
+#         x = np.arange(len(im_slice))
+#         fig = plt.figure(figsize=plt.figaspect(res[0]/res[1]))
+#         plt.plot(x, im_slice, color='red')
+#         plt.axhline(y=threshold, linestyle=':', color='blue')
+#         plt.margins(x=0, y=0)
+#         plt.axis('off')
+#         arr = fig2array(fig)
+#         plt.close()
+#         return arr

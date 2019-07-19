@@ -31,11 +31,14 @@ class WoundAssayButtonCommands(CommonButtonCommands):
             images = self.image.get_images()
             stat_text = "Wound Area: " + str(round(stat[0], 1)) + '%'
             self.set_image_row(images,
-                        subtitles=['', '', stat_text])
+                        subtitles=['', '', stat_text],
+                        img_mode=['P', 'RGB', 'RGB'])
             self.set_widgets({'channel': self.image.channel})
             self._after_apply()
             if not self.draw_progress:
                 self.destroy_wait_window()
+            self.set_slider(50)
+            self.grab_set()
 
 class WoundAssay(WoundAssayButtonCommands, WoundAssayView):
     """

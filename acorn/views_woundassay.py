@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 from .views import FramePanel, AssayView
 from .models import WoundParametersModel, ImageCorrectionWoundAssayModel
+from PIL import Image
 
 
 class WoundParameters(FramePanel):
@@ -35,7 +36,21 @@ class WoundAssayView(AssayView):
     def __init__(self, parent, **kwargs):
         self.title = 'Wound Assay'
         self.additional_panel = WoundParameters
-        self.img_titles = ['Corrected Image', 'Image slice', 'Outlined wound']
+        self.img_titles = ['Corrected Image', 'Image Slice', 'Outlined Wound']
+        self.img_scales = [True, False, False]
         self.img_filename_suffix = 'wound'
         self.image_correction_model = ImageCorrectionWoundAssayModel
         super().__init__(parent, **kwargs)
+        self.image_row.buttons[0].slider_respond = self.slider_respond
+    
+    def slider_respond(self, position):
+        if self.image:
+            plot = self.image.get_image_slice(int(position))
+            self.configure_plot(Image.fromarray(plot))
+            self.update_idletasks()
+
+    def configure_plot(self, img):
+        self.image_row.buttons[1].configure_image_button(img)
+
+    def set_slider(self, position):
+        self.image_row.buttons[0].set_slider(position)
