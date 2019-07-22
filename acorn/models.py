@@ -93,7 +93,14 @@ class ImageCorrectionCellCounterModel(ImageCorrectionDefaultModel):
     def __init__(self):
         super().__init__()
         self.model['channel']['default'] = 'Green'
-        
+
+class ImageCorrectionCellConfluent(ImageCorrectionDefaultModel):
+
+    def __init__(self):
+        super().__init__()
+        self.model['contr']['default'] = 1.2
+        self.model['blur_radius']['default'] = 1
+      
                                           
 class WoundParametersModel(Model):
 
@@ -192,6 +199,28 @@ class CellCounterModel(Model):
                     'from_': 0,
                     'to': 1000,
                     'increment': 1}
+
+
+class CellConfluentModel(WoundParametersModel):
+
+    def __init__(self):
+        super().__init__()
+        self.model['filt']['default'] = 'Otsu'
+        self.model['disk_radius']['default'] = 3 
+        self.model['min_wound'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Free space, %',
+                    'default': 0.1,
+                    'from_': 0,
+                    'to': 80,
+                    'increment': 0.001}
+        self.model['min_objects'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Min objects, %',
+                    'default': 0.01,
+                    'from_': 0,
+                    'to': 80,
+                    'increment': 0.001}
 
 
 class AppModel(Model):

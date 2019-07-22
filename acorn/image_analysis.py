@@ -249,10 +249,10 @@ class WoundImage(BinaryImage):
         img = binary_opening(img, self.selem)
         return img
         
-    def _slice_img(self):
-        y = super()._slice_img()
-        mean_kernel = np.full(self.disk_radius, 1/self.disk_radius)
-        return np.convolve(y, mean_kernel, mode='valid')
+    # def _slice_img(self):
+    #     y = super()._slice_img()
+    #     mean_kernel = np.full(self.disk_radius, 1/self.disk_radius)
+    #     return np.convolve(y, mean_kernel, mode='valid')
     
     @staticmethod
     def _remove_grains(img, size):
@@ -275,7 +275,6 @@ class WoundImage(BinaryImage):
                 'wound_width': round(width, 2)}
     
     def get_images(self):
-        #sliced_img = self.get_sliced_img(True, 11)
         im_slice = self.get_image_slice()
         return [self.img_corrected, im_slice, self.img_wound]
         
@@ -445,5 +444,18 @@ class CellCounter:
     
     def get_save_img(self):
         return self.get_outlined_cells()
+
+
+class CellConfluent(WoundImage):
+
+    def get_stat(self):
+        confluent = 100 - np.sum(self.img_binary) * 100 / self.pixels
+        return confluent
+
+    def get_report_stat(self):
+        confl = self.get_stat()
+        return {'confluent': round(confl, 1)}
+
+
 
 # поправить cхему выбора порогов в BinaryImage
