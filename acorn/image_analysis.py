@@ -248,12 +248,7 @@ class WoundImage(BinaryImage):
         img = binary_closing(img, self.selem)
         img = binary_opening(img, self.selem)
         return img
-        
-    # def _slice_img(self):
-    #     y = super()._slice_img()
-    #     mean_kernel = np.full(self.disk_radius, 1/self.disk_radius)
-    #     return np.convolve(y, mean_kernel, mode='valid')
-    
+           
     @staticmethod
     def _remove_grains(img, size):
         return remove_small_objects(img, min_size=size)
@@ -327,11 +322,13 @@ class CellCounter:
         self.N_cells = 0
         self.N_debris = 0
 
-    def __call__(self, binary_filter=None, mask_filter=None,
+    def __call__(self, channel,
+                 binary_filter=None, mask_filter=None,
                  offset_binary=None, offset_mask=None,
                  min_dist=None, disk_radius=None,
                  size_thresh=None,
                  **kwargs):
+        self.channel = channel
         self.binary_filter = binary_filter or self.binary_filter
         self.mask_filter = mask_filter or self.mask_filter
         self.offset_binary = offset_binary or self.offset_binary
@@ -339,12 +336,16 @@ class CellCounter:
         self.min_dist = min_dist or self.min_dist
         self.disk_radius = disk_radius or self.disk_radius
         self.size_thresh = size_thresh or self.size_thresh
-        self.img_binary = self.binary_im(filt=binary_filter,
-                mode='Contrast-positive',
-                offset=self.offset_binary, **kwargs)
-        self.img_binary_mask = self.binary_im(filt=mask_filter,
-                mode='Contrast-positive',
-                offset=self.offset_mask, **kwargs)      
+        self.img_binary = self.binary_im(
+                                channel=self.channel,
+                                filt=binary_filter,
+                                mode='Contrast-positive',
+                                offset=self.offset_binary, **kwargs)
+        self.img_binary_mask = self.binary_im(
+                                channel=self.channel,
+                                filt=mask_filter,
+                                mode='Contrast-positive',
+                                offset=self.offset_mask, **kwargs)      
         distance = ndi.distance_transform_edt(self.img_binary)
         foot_print = disk(self.disk_radius)
         peaks = corner_peaks(distance, indices=False,
@@ -379,10 +380,18 @@ class CellCounter:
         stat = self.get_stat() + self.get_additional_stat()
         headers = ['N_objects', 'N_debris', 'N_cells',
                    'mean_cell_size', 'sd_cell_size', 'confl']
-        d = {}
+        d = dict()
         for head, st in zip(headers, stat):
             d[head] = st if st == int(st) else round(st, 2)
         return d
+
+    def _auto_select_color(self):
+        default_color = (255, 0, 0)
+        if self.channel == 'Red':
+            default_color = (0, 0, 255)
+        if self.channel == 'Blue':
+            default_color = (0, 255, 00)
+        return default_color
 
     def get_outlined_cells(self, border_size=1,
                            border_color=(255, 0, 0)):
@@ -393,7 +402,7 @@ class CellCounter:
         if border_size > 1:
             img_borders = ndi.maximum_filter(img_borders, border_size)
         img_outlined.setflags(write=True)
-        img_outlined[img_borders] = (255, 0, 0)
+        img_outlined[img_borders] = self._auto_select_color()
         return img_outlined
 
     def called_with(self):
@@ -428,7 +437,6 @@ class CellCounter:
         images = [self.binary_im.img_original] + self.get_images()
         titles = ['Original image', 'Corrected image',
                   'Debris', 'Cells']
-        #color_maps = ['']
         fig, axes = plt.subplots(ncols=2, nrows=2,
                     sharex=True, sharey=True)
         axes = axes.ravel()

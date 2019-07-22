@@ -20,7 +20,7 @@ class CellCounterButtonCommands(CommonButtonCommands):
             result = super()._select_image(img_path, CellCounter)
         return result
             
-    def _apply(self):
+    def _sub_apply(self):
         if self._select_image(self.get_image_path()):
             if not self.draw_progress:
                 self.show_wait_window()

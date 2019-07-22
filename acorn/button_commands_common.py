@@ -3,6 +3,7 @@ from .accessory_functions import backend_switcher, dict_identical
 from .views import TableView
 from .accessory_functions import save_csv
 from tkinter import filedialog
+import tkinter.messagebox as tkmessagebox
 
 class CommonButtonCommands:
     """
@@ -56,6 +57,17 @@ class CommonButtonCommands:
                 self._image_saver()
             self.activate_report_buttons()
             self.deactivate_add_to_report()
+
+    def _apply(self):
+        try:
+            self._sub_apply()
+        except Exception as e:
+            if hasattr(self, 'wait_window'):
+                self.destroy_wait_window()
+            if hasattr(self, 'progress_window'):
+                self.destroy_progressbar()
+            tkmessagebox.showerror('Error!', str(e), parent=self)
+            self.grab_set()
     
     def _apply_all(self):
         self.set_file_name(self.get_first_image())
