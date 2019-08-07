@@ -9,7 +9,7 @@ import os
 class Model:
     
     def __init__(self):
-        self.model = {}
+        self.model = dict()
         
     def __call__(self):
         return self.model
@@ -205,7 +205,7 @@ class CellConfluentModel(WoundParametersModel):
 
     def __init__(self):
         super().__init__()
-        self.model['filt']['default'] = 'Otsu'
+        self.model['filt']['default'] = 'Mean'
         self.model['disk_radius']['default'] = 3 
         self.model['min_wound'] = {
                     'type': 'spinbox',
@@ -213,14 +213,27 @@ class CellConfluentModel(WoundParametersModel):
                     'default': 0.1,
                     'from_': 0,
                     'to': 80,
-                    'increment': 0.001}
+                    'increment': 0.01}
         self.model['min_objects'] = {
                     'type': 'spinbox',
                     'text_label': 'Min objects, %',
-                    'default': 0.01,
+                    'default': 0.05,
                     'from_': 0,
                     'to': 80,
-                    'increment': 0.001}
+                    'increment': 0.01}
+
+
+class BorderPropertiesModel(Model):
+
+    def __init__(self):
+        super().__init__()
+        self.model['border_size'] = {
+                    'type': 'spinbox',
+                    'text_label': 'Border size, pxl',
+                    'default': 1,
+                    'from_': 1,
+                    'to': 100,
+                    'increment': 1}      
 
 
 class AppModel(Model):

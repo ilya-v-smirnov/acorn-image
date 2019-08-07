@@ -24,7 +24,6 @@ class CellCounterButtonCommands(CommonButtonCommands):
         if self._select_image(self.get_image_path()):
             if not self.draw_progress:
                 self.show_wait_window()
-            self._view_file()
             app_input = self.get_input()
             self.image(**app_input)
             stat = self.image.get_stat()
@@ -36,7 +35,6 @@ class CellCounterButtonCommands(CommonButtonCommands):
                         subtitles=[n_obj, n_deb, n_cells],
                         img_mode=['P', 'P', 'RGB'])
             self.set_widgets({'channel': self.image.binary_im.channel})
-            self._after_apply()
             if not self.draw_progress:
                 self.wait_window.destroy()
             self.grab_set()

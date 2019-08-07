@@ -1,0 +1,8 @@
+file;channel;bright;contr;blur_radius;equal_exposure;inverse;filt;mode;offset;disk_radius;min_objects;min_wound;wound_area;wound_width
+D:/Google Drive/Sample Images/Wounds\01.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;24.45;339.35
+D:/Google Drive/Sample Images/Wounds\02.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;50.65;703.08
+D:/Google Drive/Sample Images/Wounds\03.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;24.74;343.45
+D:/Google Drive/Sample Images/Wounds\04.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;50.15;696.1
+D:/Google Drive/Sample Images/Wounds\05.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;53.94;748.63
+D:/Google Drive/Sample Images/Wounds\06.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;52.35;726.66
+D:/Google Drive/Sample Images/Wounds\07.JPG;BW;1.0;1.2;1.0;True;False;Mean;Borders;0.0;6;7.0;7.0;46.93;651.38

@@ -1,6 +1,6 @@
 
 import numpy as np
-import matplotlib.pyplot as plt #import imsave, switch_backend
+import matplotlib.pyplot as plt 
 from matplotlib.colors import LinearSegmentedColormap
 from math import ceil
 import csv
@@ -89,6 +89,11 @@ def save_csv(table, fieldnames, filename):
                                     fieldnames=fieldnames)
             writer.writeheader()
             for row in table:
+                for key in row.keys():
+                    if key == 'file':
+                        row[key] = row[key].replace('/', '\\')
+                    else:
+                        row[key] = str(row[key]).replace('.', ',')
                 writer.writerow(row)
        
        
@@ -101,32 +106,19 @@ def read_csv(path, sep=';'):
     return table
 
 
-def file_namer(folder, basename='file', suffix=None, num=0, ext=''):
+def file_namer(folder, prefix='', basename='file',
+               suffix=None, num=0, ext=''):
     num_str = str(num)
     add = 3 - len(num_str)
     if add > 0:
         num_str = '0' * add + num_str
     if suffix is None:
-        name = basename + '_' + num_str
+        name = prefix + basename + '_' + num_str
     else:
-        name = basename + '_' + suffix + '_' + num_str
+        name = prefix + basename + '_' + suffix + '_' + num_str
     proposed = os.path.join(folder, '.'.join([name, ext]))
     if os.path.exists(proposed):
         num += 1
-        return file_namer(folder, basename, suffix, num, ext)
+        return file_namer(folder, prefix, basename, suffix, num, ext)
     else:
         return proposed
-
-
-# def get_image_slice(img, y_slice, threshold, res):
-#         y = int(y_slice*img.shape[1]/100)
-#         im_slice = img[y,]
-#         x = np.arange(len(im_slice))
-#         fig = plt.figure(figsize=plt.figaspect(res[0]/res[1]))
-#         plt.plot(x, im_slice, color='red')
-#         plt.axhline(y=threshold, linestyle=':', color='blue')
-#         plt.margins(x=0, y=0)
-#         plt.axis('off')
-#         arr = fig2array(fig)
-#         plt.close()
-#         return arr

@@ -1,0 +1,5 @@
+file;channel;bright;contr;blur_radius;equal_exposure;inverse;mode;binary_filter;mask_filter;offset_binary;offset_mask;min_dist;disk_radius;size_thresh;N_objects;N_debris;N_cells;mean_cell_size;sd_cell_size;confl
+D:/Google Drive/Sample Images/Cells\01.JPG;Green;1.0;1.0;0.0;False;False;Contrast-positive;Minimum;Otsu;0;0;3.0;6.0;25.0;16;0;16;276.44;88.55;0.31
+D:/Google Drive/Sample Images/Cells\02.JPG;Green;1.0;1.0;0.0;False;False;Contrast-positive;Minimum;Otsu;0;0;3.0;3.0;25.0;1472;34;1438;68.71;25.86;6.84
+D:/Google Drive/Sample Images/Cells\03.JPG;Green;1.0;1.0;0.0;False;False;Contrast-positive;Minimum;Otsu;0;0;3.0;3.0;25.0;2074;58;2016;77.3;22.17;10.8
+D:/Google Drive/Sample Images/Cells\04.JPG;BW;1.0;1.0;0.0;False;True;Contrast-positive;Otsu;Otsu;0;-14.0;8.0;15.0;200.0;444;9;435;1396.52;796.0;42.08

@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageEnhance
 from PIL.ImageOps import invert
 from PIL.ImageFilter import GaussianBlur
-from skimage.filters import threshold_otsu, threshold_mean, threshold_minimum 
+from skimage.filters import threshold_otsu, threshold_mean, threshold_minimum
 from skimage.morphology import watershed, binary_opening, binary_closing
 from skimage.morphology import disk, remove_small_objects
 from scipy import ndimage as ndi
@@ -190,7 +190,15 @@ class BinaryImage(CorrectedImage):
         arr = fig2array(fig)
         plt.close()
         return arr
-               
+
+    @staticmethod
+    def img_saver(img, folder, prefix, basename, suffix, ext,
+                                color_map='gray'):
+        file_name = file_namer(folder=folder, prefix=prefix,
+                                basename=basename,
+                                suffix=suffix, ext=ext)
+        save_image(img, file_name, color_map)
+        
     def called_with(self):
         d = {'filt': self.filt,
              'mode': self.mode,
@@ -213,6 +221,7 @@ class WoundImage(BinaryImage):
         self.disk_radius = 1
         self.min_wound = 1
         self.min_objects = 1
+        self.int_images = list()
         
     def __call__(self,   
                  disk_radius,
@@ -229,7 +238,7 @@ class WoundImage(BinaryImage):
         self.pixels = np.prod(self.img_corrected.shape)
         black_granule_size = round(self.pixels*self.min_wound/100)
         white_granule_size = round(self.pixels*self.min_objects/100)
-        # Removes objects inside the wound
+        # Removes objects inside the wound            
         self.img_binary = self._remove_grains(self.img_binary,
                             white_granule_size)
         # Removes objects outside of the wound
@@ -296,9 +305,10 @@ class WoundImage(BinaryImage):
             ax.axis('off')
         plt.tight_layout()
         plt.show()
-        
-    def get_save_img(self):
-        return self.img_wound
+
+    def save_final_image(self, folder, prefix, basename, suffix, ext):
+        super().img_saver(self.img_wound, folder, prefix,
+                          basename, suffix, ext)
 
 
 class CellCounter:
@@ -326,7 +336,8 @@ class CellCounter:
                  binary_filter=None, mask_filter=None,
                  offset_binary=None, offset_mask=None,
                  min_dist=None, disk_radius=None,
-                 size_thresh=None,
+                 size_thresh=None, border_size=1,
+                 border_color=None,
                  **kwargs):
         self.channel = channel
         self.binary_filter = binary_filter or self.binary_filter
@@ -336,6 +347,8 @@ class CellCounter:
         self.min_dist = min_dist or self.min_dist
         self.disk_radius = disk_radius or self.disk_radius
         self.size_thresh = size_thresh or self.size_thresh
+        self.border_size = border_size
+        self.border_color = border_color
         self.img_binary = self.binary_im(
                                 channel=self.channel,
                                 filt=binary_filter,
@@ -386,23 +399,24 @@ class CellCounter:
         return d
 
     def _auto_select_color(self):
-        default_color = (255, 0, 0)
-        if self.channel == 'Red':
-            default_color = (0, 0, 255)
-        if self.channel == 'Blue':
-            default_color = (0, 255, 00)
-        return default_color
+        if self.channel == 'Green':
+            return (255, 0, 0)
+        elif self.channel == 'Blue':
+            return (0, 255, 0)
+        else:
+            return (0, 0, 255)
 
-    def get_outlined_cells(self, border_size=1,
-                           border_color=(255, 0, 0)):
+    def get_outlined_cells(self):
         img_outlined = self.binary_im.get_img_original()
         if len(img_outlined.shape) == 2:
             img_outlined = np.dstack((img_outlined,) * 3)
         img_borders = roberts(self.img_cells) > 0
-        if border_size > 1:
-            img_borders = ndi.maximum_filter(img_borders, border_size)
+        if self.border_size > 1:
+            img_borders = ndi.maximum_filter(img_borders, self.border_size)
         img_outlined.setflags(write=True)
-        img_outlined[img_borders] = self._auto_select_color()
+        if not self.border_color:
+            self.border_color = self._auto_select_color()
+        img_outlined[img_borders] = self.border_color
         return img_outlined
 
     def called_with(self):
@@ -449,9 +463,19 @@ class CellCounter:
             ax.axis('off')
         plt.tight_layout()
         plt.show()
+
+    @staticmethod
+    def img_saver(img, folder, prefix, basename, suffix, ext,
+                                color_map='gray'):
+        file_name = file_namer(folder=folder, prefix=prefix,
+                                basename=basename,
+                                suffix=suffix, ext=ext)
+        save_image(img, file_name, color_map)
     
-    def get_save_img(self):
-        return self.get_outlined_cells()
+    def save_final_image(self, folder, prefix, basename, suffix, ext):
+        self.img_saver(self.get_outlined_cells(), folder, prefix,
+                                basename, suffix, ext)
+
 
 
 class CellConfluent(WoundImage):

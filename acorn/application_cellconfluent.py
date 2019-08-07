@@ -24,9 +24,8 @@ class CellConfluentButtonCommands(CommonButtonCommands):
         if self._select_image(self.get_image_path()):
             if not self.draw_progress:
                 self.show_wait_window()
-            self._view_file()
             input = self.get_input()
-            self.image(**input, border_size=1)
+            self.image(**input)
             stat = self.image.get_stat()
             images = self.image.get_images()
             stat_text = "Cell Confluent: " + str(round(stat, 1)) + '%'
@@ -34,7 +33,6 @@ class CellConfluentButtonCommands(CommonButtonCommands):
                         subtitles=['', '', stat_text],
                         img_mode=['P', 'RGB', 'RGB'])
             self.set_widgets({'channel': self.image.channel})
-            self._after_apply()
             if not self.draw_progress:
                 self.destroy_wait_window()
             self.set_slider(50)

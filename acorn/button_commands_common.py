@@ -4,6 +4,7 @@ from .views import TableView
 from .accessory_functions import save_csv
 from tkinter import filedialog
 import tkinter.messagebox as tkmessagebox
+from .views_additional_properties import AdditionalPropertis
 
 class CommonButtonCommands:
     """
@@ -18,28 +19,57 @@ class CommonButtonCommands:
     def _select_image(self, img_path, FUN):
         if img_path:
             self.image = FUN(img_path)
+            file_name = self.get_input().get('file')
+            index = self.file_manager.images.index(file_name)
+            self.file_manager.image_index = index
+            self.set_image(self.image.get_PILimg())
             return True
         else:
             return False
 
     def _apply(self):
-        pass
+        try:
+            self._sub_apply()
+        except Exception as e:
+            if hasattr(self, 'wait_window'):
+                self.destroy_wait_window()
+            if hasattr(self, 'progress_window'):
+                self.destroy_progressbar()
+            tkmessagebox.showerror('Error!', str(e), parent=self)
+            self.grab_set()
+        finally:
+            n_files = len(self.file_manager.images)
+            im_index = self.file_manager.image_index
+            if n_files > 1:
+                if im_index > 0:
+                    self.activate_previous()
+                else:
+                    self.deactivate_previous()
+                if im_index + 1 == n_files:
+                    self.deactivate_next()
+                else:
+                    self.activate_next()
+            self.activate_view_images()
+            self.activate_add_to_report()
 
-    def _view_file(self):
-        if self._select_image(self.get_image_path()):
-            self.set_image(self.image.get_PILimg())
-          
     def _next(self):
         self.next_file()
+        self._apply()
+
+    def _previous(self):
+        self.previous_file()
         self._apply()
         
     def _image_saver(self):
         save = self.get_save_images_status()
         if save:
             basename = self.get_file_name(with_ext=False)
-            self.save_image(self.image.get_save_img(),
-                            name=basename,
-                            suffix=self.img_filename_suffix)
+            self.image.save_final_image(folder=self.get_path_wd(),
+                                prefix='',
+                                basename=basename,
+                                suffix=self.img_filename_suffix,
+                                ext='jpg')
+
         
     def _add_to_report(self):
         if self.image:
@@ -57,21 +87,10 @@ class CommonButtonCommands:
                 self._image_saver()
             self.activate_report_buttons()
             self.deactivate_add_to_report()
-
-    def _apply(self):
-        try:
-            self._sub_apply()
-        except Exception as e:
-            if hasattr(self, 'wait_window'):
-                self.destroy_wait_window()
-            if hasattr(self, 'progress_window'):
-                self.destroy_progressbar()
-            tkmessagebox.showerror('Error!', str(e), parent=self)
-            self.grab_set()
     
     def _apply_all(self):
-        self.set_file_name(self.get_first_image())
-        self.n_files = len(self.get_images())
+        self.file_manager.set_first_image()
+        self.n_files = len(self.file_manager.images)
         if self.n_files > 1:
             self.draw_progress = True
             self.progress_widget()
@@ -86,7 +105,6 @@ class CommonButtonCommands:
     def _clear_report(self):
         self.result.clear()
         self.set_default_images()
-        self.deactivate_add_to_report()
         self.deactivate_report_buttons()
         self.deactivate_view_images()
     
@@ -116,3 +134,12 @@ class CommonButtonCommands:
                 fieldnames = self.result[0].keys()
             if csv_name != '':
                 save_csv(self.result, fieldnames, csv_name)
+
+    def _add_prop(self):
+        inp = self.get_input()
+        props = ['border_size', 'border_color']
+        props_dict = dict()
+        for pr in props:
+            props_dict[pr] = inp.get(pr)
+        print(props_dict)
+        self.add_prop = AdditionalPropertis(self, **props_dict)

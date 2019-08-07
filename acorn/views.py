@@ -26,10 +26,10 @@ class FramePanel(tk.LabelFrame):
     
     def get_input(self):
         keys = self.widgets.keys()
-        dict = {}
+        d = dict()
         for k in keys:
-            dict[k] = self.widgets[k].get()
-        return dict
+            d[k] = self.widgets[k].get()
+        return d
         
     def set_widgets(self, widget_values):
         for key, value in widget_values.items():
@@ -48,24 +48,28 @@ class FilePathLabel(ttk.Label):
         self.path = path
         self.limit = limit
         self.begin = begin
-        self._set()
         self.text = self._make_limited()
         super().__init__(parent, text=self.text)
-        
-    def _set(self):
-        if self.path is None:
-            self._path = os.getcwd()
-        elif os.path.exists(self.path):
-            self._path = self.path
+    
+    @property
+    def path(self):
+        return self.__path
+
+    @path.setter
+    def path(self, path):
+        if path is None:
+            self.__path = os.getcwd()
+        elif os.path.exists(path):
+            self.__path = path
         else:
             raise ValueError('Wrong path')
+        self.__path = self.path.replace('/', '\\')
     
     def _make_limited(self):
-        return limit_text(self._path, self.limit, self.begin)
+        return limit_text(self.__path, self.limit, self.begin)
     
     def configure(self, path):
         self.path = path
-        self._set()
         self.text = self._make_limited()
         super().configure(text=self.text)
     
@@ -75,7 +79,9 @@ class FileManager(ImageFileMixin, FramePanel):
     File Manager is able to choose image containing directory and
     working directory to save images and report.
     """
-    
+
+    sticky_pad = {'sticky': tk.W+tk.E, 'padx': 5, 'pady': 1}
+
     def __init__(self, parent,
                  path=None, img_ext=None):
         self.path = path
@@ -84,53 +90,52 @@ class FileManager(ImageFileMixin, FramePanel):
                             frame_model=FileManagerModel)
         ImageFileMixin.__init__(self, path=path,
                                 img_ext=img_ext)
-        self.path_wd = self.path if os.path.exists(self.path) else None                        
+        self.path_wd = self.path                        
         self.frame_model.add_value(widget='recursive',
-                             key='command',
-                             value=self._recursive)
+                                key='command',
+                                value=self._recursive)
         self.initiate_widgets()
-        sticky_pad = {'sticky': tk.W+tk.E, 'padx': 5, 'pady': 1}
-        ttk.Label(self,
-                  text='Path to images:'
-                  ).grid(row=0, column=0,
-                  **sticky_pad)        
+        ttk.Label(self, text='Path to images:'
+                                ).grid(row=0, column=0,
+                                **self.sticky_pad)        
         self.path_to_images = FilePathLabel(self,
                                 path=self.path,
                                 limit=50, begin=20)
         self.path_to_images.grid(row=1, column=0, columnspan=2,
-                                **sticky_pad)
+                                **self.sticky_pad)
         self.widgets['file'] = w.LabeledWidget(self,
                                 type='combobox', text_label='File:',
-                                default=self.first_img,
+                                default=self.current_image,
                                 values=self.images,
                                 width=50)
         self.widgets['file'].grid(row=2, column=0,
                                 columnspan=2,
-                                **sticky_pad)
+                                **self.sticky_pad)
         self.path_to_wd = FilePathLabel(self,
                                 path=self.path_wd,
                                 limit=50, begin=20)
         self.path_to_wd.grid(row=4, column=0,
                              columnspan=2,
-                             **sticky_pad)
+                             **self.sticky_pad)
         but_browse1 = ttk.Button(self, text="Browse",
                                  command=self._browse_button1)        
         ttk.Label(self,
                  text='Path to working directory:'
                  ).grid(row=3, column=0,
-                 **sticky_pad)
+                 **self.sticky_pad)
         self.recursive = False
         self.widgets['recursive'].grid(row=3, column=1,
-                                **sticky_pad)
+                                **self.sticky_pad)
         self.widgets['save_images'].grid(row=5, column=0,
                                 sticky=tk.W, padx=5)          
-        but_browse1.grid(row=1, column=2, **sticky_pad)
+        but_browse1.grid(row=1, column=2, **self.sticky_pad)
         but_browse2 = ttk.Button(self, text="Browse",
                                  command=self._browse_button2)
-        but_browse2.grid(row=4, column=2, **sticky_pad)
+        but_browse2.grid(row=4, column=2, **self.sticky_pad)
         
     def _browse_button1(self):
-        chosen_path = filedialog.askdirectory(parent=self)
+        chosen_path = filedialog.askdirectory(parent=self,
+                                initialdir=self.path)
         if chosen_path != '':
             self.path = chosen_path
             self.path_to_images.configure(path=self.path)
@@ -138,10 +143,15 @@ class FileManager(ImageFileMixin, FramePanel):
             self._find_images()
             self.widgets['file'].set(self.first_img)
             self.widgets['file'].configure(values=self.images)
+            self.select_first_image()
             self.configure_buttons()
+ 
+    def select_first_image(self):
+        pass
         
     def _browse_button2(self):
-        chosen_path = filedialog.askdirectory(parent=self)
+        chosen_path = filedialog.askdirectory(parent=self,
+                                initialdir=self.path_wd)
         if chosen_path != '':
             self.path_wd = chosen_path
             self.path_to_wd.configure(path=self.path_wd)
@@ -150,10 +160,13 @@ class FileManager(ImageFileMixin, FramePanel):
         self.recursive = self.widgets['recursive'].get()
         self.images.clear()
         self._find_images()
+        self.image_index = 0
+        self.set_current_image()
         self.widgets['file'].set(self.first_img)
         self.widgets['file'].configure(values=self.images)
         self.configure_buttons()
-        
+        self.select_first_image()
+
     def get_image_path(self):
         fileName = self.widgets['file'].get()
         if fileName == 'None':
@@ -161,19 +174,21 @@ class FileManager(ImageFileMixin, FramePanel):
         return os.path.join(self.path, fileName)
         
     def next_file(self):
-        file_name = self.widgets['file'].get()
-        index = self.images.index(file_name)
-        if index + 1 < len(self.images):
-            self.widgets['file'].set(self.images[index+1])
-            
+        self._next_file()
+        self.widgets['file'].set(self.current_image)
+
+    def previous_file(self):
+        self._previous_file()
+        self.widgets['file'].set(self.current_image)
+                    
     def get_file_name(self, with_ext=True):
         file_name = self.widgets['file'].get()
         if with_ext:
             return file_name
         return os.path.splitext(file_name)[0]
 
-    def set_file_name(self, path):
-        filename = os.path.basename(path)
+    def set_file_name(self):
+        filename = os.path.basename(self.images[self.image_index])
         self.widgets['file'].set(filename)
         
     def get_save_images_status(self):
@@ -181,7 +196,15 @@ class FileManager(ImageFileMixin, FramePanel):
 
     def configure_buttons(self):
         pass
-                   
+
+    def get_path_wd(self):
+        return self.path_wd
+
+    def set_first_image(self):
+        self.image_index = 0
+        self.set_current_image()
+        self.set_file_name()
+               
        
 class ImageCorrection(FramePanel):
     """
@@ -316,108 +339,119 @@ class ButtonPanel:
     """
     Creats a panel containing buttons.
     """
-    
-    def __init__(self, parent, *args, **kwargs):    
-        sticky_pad = {"sticky": tk.W+tk.E, "padx": 5, "pady": 2}
-        self.button_frame = tk.Frame(parent, *args, **kwargs)
-        self.view_file_but = tk.Button(self.button_frame,
-                                text="\n  View file  \n",
+
+    sticky_pad = {"sticky": tk.W+tk.E, "padx": 5, "pady": 2}
+
+    def __init__(self, parent, *args, **kwargs):
+        self.button_frame = tk.Frame(parent,  *args, **kwargs)
+        self.buttons = list()
+        apply_button = tk.Button(self.button_frame,     # 0
+                                text="    APPLY    ",
                                 relief='groove',
                                 state='disabled',
-                                command=self._view_file)
-        self.view_file_but.grid(row=0, column=0, rowspan=2,
-                                **sticky_pad)        
-        button_name = ("Apply", ">> Next >>",
-                       "<< Apply ALL >>", "View Images",
-                       "Add to Report", "View Report",
-                       "Clear Report", "Save Report")
-        button_functions = (self._apply, self._next,
-                            self._apply_all, self._view_images,
-                            self._add_to_report, self._view_report,
-                            self._clear_report, self._save_report)
-        self.buttons = []
-        for button, fun in zip(button_name, button_functions):
+                                command=self._apply)
+        apply_button.grid(row=0, column=0, rowspan=2,
+                          sticky=tk.W+tk.E+tk.N+tk.S,
+                          padx=5, pady=2)
+        self.buttons.append(apply_button)
+        button_name = (">> Next >>", "<< Previous <<",      # 1, 2
+                       "<< Apply ALL >>", "View Images",    # 3, 4
+                       "Add to Report", "View Report",      # 5, 6
+                       "Clear Report", "Save Report")       # 7, 8
+        button_commands = (self._next, self._previous,
+                           self._apply_all, self._view_images,
+                           self._add_to_report, self._view_report,
+                           self._clear_report, self._save_report)
+        for but_name, but_cmd in zip(button_name, button_commands):
             self.buttons.append(tk.Button(self.button_frame,
-                                          text=button,
-                                          relief='groove',
-                                          state='disabled',
-                                          command=fun))
-        for i, button in enumerate(self.buttons):
+                                text=but_name,
+                                relief='groove',
+                                state='disabled',
+                                command=but_cmd))
+        for i, but in enumerate(self.buttons[1:]):
             row = i % 2
             col = i // 2 + 1
-            button.grid(row=row, column=col,
-                        **sticky_pad)
+            but.grid(row=row, column=col, **self.sticky_pad)
+        prop_button = tk.Button(self.button_frame,
+                                text='Additional Properties',
+                                relief='groove',
+                                command=self._add_prop)
+        prop_button.grid(row=3, column=1, columnspan=3,
+                                **self.sticky_pad)
     
     def grid_button_frame(self, *args, **kwargs):
         self.button_frame.grid(*args, **kwargs)
 
-    def activate_view_apply(self):
-        self.view_file_but.configure(state='normal')
+    def activate_apply_apply_all(self):
         self.buttons[0].configure(state='normal')
+        self.buttons[3].configure(state='normal')
 
-    def deactivate_view_apply(self):
-        self.view_file_but.configure(state='disabled')
+    def deactivate_apply_apply_all(self):
         self.buttons[0].configure(state='disabled')
+        self.buttons[3].configure(state='disabled')
 
     def activate_next(self):
         self.buttons[1].configure(state='normal')
-    
+
     def deactivate_next(self):
         self.buttons[1].configure(state='disabled')
 
-    def activate_apply_all(self):
+    def activate_previous(self):
         self.buttons[2].configure(state='normal')
 
-    def activate_add_to_report(self):
-        self.buttons[4].configure(state='normal')
-    
-    def deactivate_add_to_report(self):
-        self.buttons[4].configure(state='disabled')
+    def deactivate_previous(self):
+        self.buttons[2].configure(state='disabled')
 
     def activate_view_images(self):
-        self.buttons[3].configure(state='normal')
+        self.buttons[4].configure(state='normal')
 
     def deactivate_view_images(self):
-        self.buttons[3].configure(state='disabled')
+        self.buttons[4].configure(state='disabled')
+
+    def activate_add_to_report(self):
+        self.buttons[5].configure(state='normal')
+
+    def deactivate_add_to_report(self):
+        self.buttons[5].configure(state='disabled')
 
     def activate_report_buttons(self):
-        ind = [5, 6, 7]
+        ind = [6, 7, 8]
         for i in ind:
             self.buttons[i].configure(state='normal')
 
     def deactivate_report_buttons(self):
-        ind = [5, 6, 7]
+        ind = [6, 7, 8]
         for i in ind:
             self.buttons[i].configure(state='disabled')
 
-    def _view_file(self):
-        pass
-    
     def _apply(self):
         pass
-        
+
     def _next(self):
         pass
-        
+
+    def _previous(self):
+        pass
+
     def _apply_all(self):
         pass
-        
+    
     def _view_images(self):
         pass
-        
+
     def _add_to_report(self):
         pass
-        
-    def _view_report(self, table):
+
+    def _view_report(self):
         pass
-        
-    def _clear_report(self):
-        pass
-        
+
     def _clear_report(self):
         pass
 
     def _save_report(self):
+        pass
+
+    def _add_prop(self):
         pass
 
 
@@ -463,8 +497,9 @@ class AssayView(ButtonPanel, tk.Frame):
             if not hasattr(self, attr):
                 setattr(self, attr, val)
         self.file_manager = None
-        self.input_panels=None
+        self.input_panels = None
         self._draw_view()
+        self.file_manager.bind('<MouseWheel>', self.wheel_change)
         
     def _draw_view(self,):
         sticky_pad = {'sticky':tk.W+tk.E, 'padx':5, 'pady':2}
@@ -476,6 +511,7 @@ class AssayView(ButtonPanel, tk.Frame):
                                         self.default_folder,
                                         self.img_ext)
         self.file_manager.configure_buttons = self.configure_buttons
+        self.file_manager.select_first_image = self.show_image
         self.image_correction = ImageCorrection(left_panel,
                             frame_model=self.image_correction_model)
         self.input_panels = [self.file_manager,
@@ -506,11 +542,9 @@ class AssayView(ButtonPanel, tk.Frame):
         
     def configure_buttons(self):
         if self.get_image_path():
-            self.activate_view_apply()
+            self.activate_apply_apply_all()
         else:
-            self.deactivate_view_apply()
-        if len(self.get_images()) > 1:
-            self.activate_apply_all()
+            self.deactivate_apply_apply_all()
 
     def set_image(self, image):
         self.img_view.configure(image)
@@ -520,7 +554,7 @@ class AssayView(ButtonPanel, tk.Frame):
         self.image_row.configure_subtitles(subtitles)
         
     def get_input(self):
-        app_input = {}
+        app_input = dict()
         for panel in self.input_panels:
             app_input = {**app_input, **panel.get_input()}
         return app_input
@@ -530,9 +564,19 @@ class AssayView(ButtonPanel, tk.Frame):
         
     def get_path_wd(self):
         return self.file_manager.get_path_wd()
-        
+
+    def show_image(self):
+        img_path = self.get_image_path()
+        if img_path: # not None
+            self._select_image(img_path)
+        else: 
+            self.img_view.set_default_image()
+
     def next_file(self):
         self.file_manager.next_file()
+
+    def previous_file(self):
+        self.file_manager.previous_file()
         
     def get_first_image(self):
         return self.file_manager.get_first_image()
@@ -553,12 +597,6 @@ class AssayView(ButtonPanel, tk.Frame):
         
     def get_save_images_status(self):
         return self.file_manager.get_save_images_status()
-        
-    def save_image(self, img, name, suffix, ext='jpg'):
-        self.file_manager.save_image(img=img,
-                    folder=self.file_manager.get_path_wd(),
-                    name=name, suffix=suffix,
-                    ext=ext)
                     
     def set_default_images(self):
         self.img_view.set_default_image()
@@ -625,13 +663,11 @@ class AssayView(ButtonPanel, tk.Frame):
     def destroy_progressbar(self):
         self.progress_window.destroy()
 
-    def _after_apply(self):
-        images = self.get_images()
-        filename = self.get_file_name()
-        index = images.index(filename)
-        if index < len(images)-1:
-            self.activate_next()
-        else:
-            self.deactivate_next()
-        self.activate_add_to_report()
-        self.activate_view_images()
+    def wheel_change(self, event):
+        change = -event.delta
+        if change > 0:
+            self.next_file()
+        if change < 0:
+            self.previous_file()
+        self.show_image()
+        self.update()

@@ -57,7 +57,9 @@ class AcornImage(tk.Tk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.title('Acorn Image')
-        self.geometry('200x150')
+        self.geometry('250x150')
         self.resizable(width=False, height=False)
+        ico = tk.PhotoImage(file = 'acorn.png')
+        self.iconphoto(True, ico)
         self.mainview = MainView(self)
         self.mainview.pack()
